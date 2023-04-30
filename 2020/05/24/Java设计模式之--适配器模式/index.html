@@ -1,0 +1,1404 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head><meta name="generator" content="Hexo 3.9.0">
+  <meta charset="utf-8">
+  <meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0" name="viewport">
+  
+  <title itemprop="name">Java设计模式系列之--适配器模式 | 李朋军的个人博客</title>
+  
+    <link rel="shortcut icon" href="/images/favicon.jpg">
+  
+  <meta http-equiv="x-dns-prefetch-control" content="on">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Noto+SerifMerriweather|Merriweather+Sans|Source+Code+Pro|Ubuntu:400,700|Noto+Serif+SC" media="all">
+  <link rel="dns-prefetch" href="//cdn.jsdelivr.net">
+  <link rel="stylesheet" id="saukra_css-css" href="/css/style.css" type="text/css" media="all">
+  <link rel="stylesheet" href="/css/lib.min.css" media="all">
+  <link rel="stylesheet" href="/css/font.css" media="all">
+  <link rel="stylesheet" href="/css/insight.css" media="all">
+  <link rel="stylesheet" href="/css/jquery.fancybox.min.css" media="all">
+  <link rel="stylesheet" href="/css/zoom.css" media="all">
+  <link rel="stylesheet" type="text/css" href="/css/sharejs.css">
+<!--   <link rel="stylesheet" id="saukra_css-css" href="https://2heng.xin/wp-content/cache/autoptimize/css/autoptimize_ad42a61f4c7d4bdd9f91afcff6b5dda5.css
+" type="text/css" media="all"> -->
+  <script>
+  /*Initial Variables*/
+  var mashiro_option = new Object();
+  var mashiro_global = new Object();
+  mashiro_option.NProgressON = true;
+  /* 
+   * 邮箱信息之类的东西可以填在这里，这些js变量基本都作用于sakura-app.js
+   * 这样的设置仅是为了方便在基于PHP开发的主题中设置js变量，既然移植到了Node上，我想或许可以精简这一逻辑吧
+   */
+  mashiro_option.email_domain = "";
+  mashiro_option.email_name = "";
+  mashiro_option.cookie_version_control = "";
+  mashiro_option.qzone_autocomplete = false;
+  mashiro_option.site_name = "李朋军";
+  mashiro_option.author_name = "朋军";
+  mashiro_option.site_url = "http://blog.mtracy.club/";
+  mashiro_option.v_appId = "k0QcRvFFw7AovKS8un6pys2S-gzGzoHsz";
+  mashiro_option.v_appKey = "Y5w42nyHhdKlYHT00svHuIya";
+  mashiro_option.mathjax = "0";
+  mashiro_option.qq_api_url = "https://api.mashiro.top/qqinfo/"; 
+  mashiro_option.qq_avatar_api_url = "https://api.mashiro.top/qqinfo/";
+
+  // mashiro_option.jsdelivr_css_src = "https://cdn.jsdelivr.net/gh/moezx/cdn@3.4.5/css/lib.min.css";
+  // mashiro_option.float_player_on = true;
+
+  /*End of Initial Variables*/
+  </script>
+  <script type="text/javascript">
+  var bg = "https://cdn.jsdelivr.net/gh/pengjunlee/picture-warehouse/img/(1).jpg.webp,https://cdn.jsdelivr.net/gh/pengjunlee/picture-warehouse/img/(2).jpg.webp,https://cdn.jsdelivr.net/gh/pengjunlee/picture-warehouse/img/(3).jpg.webp,https://cdn.jsdelivr.net/gh/pengjunlee/picture-warehouse/img/(4).jpg.webp,https://cdn.jsdelivr.net/gh/pengjunlee/picture-warehouse/img/(5).jpg.webp,https://cdn.jsdelivr.net/gh/pengjunlee/picture-warehouse/img/(6).jpg.webp,https://cdn.jsdelivr.net/gh/pengjunlee/picture-warehouse/img/(7).jpg.webp,https://cdn.jsdelivr.net/gh/pengjunlee/picture-warehouse/img/(8).jpg.webp".split(",");
+  var bgindex = Math.floor(Math.random()*bg.length);
+  if (!!window.ActiveXObject || "ActiveXObject" in window) { //is IE?
+    alert('朋友，IE浏览器未适配哦~');
+  }
+  </script>
+  <style type="text/css">
+  .hljs-ln{border-collapse:collapse}.hljs-ln td{padding:0}.hljs-ln-n:before{content:attr(data-line-number)}
+  </style>
+  <style type="text/css">.site-top .lower nav{display:block !important;}.author-profile i,.post-like a,.post-share .show-share,.sub-text,.we-info a,span.sitename,.post-more i:hover,#pagination a:hover,.post-content a:hover,.float-content i:hover{color:#FE9600}.feature i,.download,.navigator i:hover,.links ul li:before,.ar-time i,span.ar-circle,.object,.comment .comment-reply-link,.siren-checkbox-radio:checked + .siren-checkbox-radioInput:after{background:#FE9600}::-webkit-scrollbar-thumb{background:#FE9600}.download,.navigator i:hover,.link-title,.links ul li:hover,#pagination a:hover,.comment-respond input[type='submit']:hover{border-color:#FE9600}.entry-content a:hover,.site-info a:hover,.comment h4 a,#comments-navi a.prev,#comments-navi a.next,.comment h4 a:hover,.site-top ul li a:hover,.entry-title a:hover,#archives-temp h3,span.page-numbers.current,.sorry li a:hover,.site-title a:hover,i.iconfont.js-toggle-search.iconsearch:hover,.comment-respond input[type='submit']:hover{color:#FE9600}.comments .comments-main{display:block !important;}.comments .comments-hidden{display:none !important;}background-position:center center;background-attachment:inherit;}
+  </style>
+</head>
+</html>
+<body class="page-template page-template-user page-template-page-analytics page-template-userpage-analytics-php page page-id-1297 chinese-font serif isWebKit">
+  <div class="scrollbar" id="bar">
+  </div>
+  <a href="#" class="cd-top faa-float animated"></a>
+  <section id="main-container">
+    <div class="headertop filter-grid">
+  <div id="banner_wave_1"></div>
+  <div id="banner_wave_2"></div>
+  <figure id="centerbg" class="centerbg">
+    <div class="focusinfo no-select">
+      <div class="header-tou">
+        <a href="http://blog.mtracy.club/">
+          <img src="https://cdn.jsdelivr.net/gh/pengjunlee/picture-warehouse/img/avatar.jpg">
+        </a>
+      </div>
+      <div class="header-info">
+        <p>千帆退却，我向前；天涯尽头，是晴天!</p>
+        <div class="top-social_v2">
+          <li id="bg-pre">
+            <img class="flipx" src="https://cdn.jsdelivr.net/gh/honjun/cdn@1.6/img/other/next-b.svg">
+          </li>
+          
+            
+              
+                <li>
+                  <a href="http://github.com/honjun" target="_blank" class="social-github" title="github">
+                    <img src="https://cdn.jsdelivr.net/gh/pengjunlee/picture-warehouse/img/github.png">
+                  </a>
+                </li>
+              
+            
+              
+                <li>
+                  <a href="http://weibo.com/mashirozx?is_all=1" target="_blank" class="social-github" title="sina">
+                    <img src="https://cdn.jsdelivr.net/gh/pengjunlee/picture-warehouse/img/sina.png">
+                  </a>
+                </li>
+              
+            
+              
+                <li>
+                  <a href="http://weibo.com/mashirozx?is_all=1" target="_blank" class="social-github" title="wangyiyun">
+                    <img src="https://cdn.jsdelivr.net/gh/pengjunlee/picture-warehouse/img/wangyiyun.png">
+                  </a>
+                </li>
+              
+            
+              
+                <li>
+                  <a href="http://weibo.com/mashirozx?is_all=1" target="_blank" class="social-github" title="zhihu">
+                    <img src="https://cdn.jsdelivr.net/gh/pengjunlee/picture-warehouse/img/zhihu.png">
+                  </a>
+                </li>
+              
+            
+              
+                <li>
+                  <a href="http://weibo.com/mashirozx?is_all=1" target="_blank" class="social-github" title="email">
+                    <img src="https://cdn.jsdelivr.net/gh/pengjunlee/picture-warehouse/img/email.svg">
+                  </a>
+                </li>
+              
+            
+              
+                <li class="wechat">
+                  <a href="/#">
+                    <img src="https://cdn.jsdelivr.net/gh/pengjunlee/picture-warehouse/img/wechat.png">
+                  </a>
+                  <div class="wechatInner">
+                    <img src="https://cdn.jsdelivr.net/gh/pengjunlee/picture-warehouse/img/wechat.jpg">
+                  </div>
+                </li>
+              
+            
+              
+                <li class="wechat">
+                  <a href="/#">
+                    <img src="https://cdn.jsdelivr.net/gh/pengjunlee/picture-warehouse/img/wechat.png">
+                  </a>
+                  <div class="wechatInner">
+                    <img src="https://cdn.jsdelivr.net/gh/pengjunlee/picture-warehouse/img/wechat.jpg">
+                  </div>
+                </li>
+              
+            
+          
+          <li id="bg-next">
+            <img src="https://cdn.jsdelivr.net/gh/honjun/cdn@1.6/img/other/next-b.svg">
+          </li>
+        </div>
+      </div>
+    </div>
+  </figure>
+  <div id="video-container" style="">
+    <video style="object-fit: fill" id="bgvideo" class="video" video-name="" src="" width="auto" preload="auto">
+    </video>
+    <div id="video-btn" class="loadvideo videolive">
+    </div>
+    <div id="video-add">
+    </div>
+    <div class="video-stu">
+    </div>
+  </div>
+  <div class="headertop-down faa-float animated" onclick="headertop_down()">
+    <span>
+      <i class="fa fa-chevron-down" aria-hidden="true">
+      </i>
+    </span>
+  </div>
+</div>
+    <div id="page" class="site wrapper">
+      <header class="site-header no-select gizle sabit" role="banner">
+  <div class="site-top">
+    <div class="site-branding">
+      <span class="site-title">
+        <span class="logolink moe-mashiro">
+          <a href="/">
+            <span class="sakurasono">李</span>
+            <span class="shironeko">朋军</span>
+          </a>
+        </span>
+      </span>
+    </div>
+    <div class="searchbox search-form-submit">
+      <i class="iconfont js-toggle-search iconsearch icon-search">
+      </i>
+    </div>
+    <div id="show-nav" class="showNav mobile-fit">
+      <div class="line line1">
+      </div>
+      <div class="line line2">
+      </div>
+      <div class="line line3">
+      </div>
+    </div>
+    <div class="lower-cantiner">
+      <div class="lower">
+        <nav class="mobile-fit-control hide">
+          <ul id="menu-new" class="menu">
+            
+              <li>
+                <a href="/">
+                  <span class="faa-parent animated-hover">
+                    <i class="fa  fa-fort-awesome faa-shake" aria-hidden="true"></i>
+                    首页
+                  </span>
+                </a>
+                
+              </li>
+            
+              <li>
+                <a href="/archives">
+                  <span class="faa-parent animated-hover">
+                    <i class="fa  fa-archive faa-shake" aria-hidden="true"></i>
+                    归档
+                  </span>
+                </a>
+                
+                  <ul class="sub-menu">
+                    
+                      <li>
+                        <a href="/categories/编程/">
+                          <i class="fa fa-code" aria-hidden="true"></i>
+                          编程
+                        </a>
+                      </li>
+                    
+                      <li>
+                        <a href="/categories/技术/">
+                          <i class="fa fa-cogs" aria-hidden="true"></i>
+                          技术
+                        </a>
+                      </li>
+                    
+                      <li>
+                        <a href="/categories/生活/">
+                          <i class="fa fa-file-text-o" aria-hidden="true"></i>
+                          生活
+                        </a>
+                      </li>
+                    
+                      <li>
+                        <a href="/categories/资源/">
+                          <i class="fa fa-cloud-download" aria-hidden="true"></i>
+                          资源
+                        </a>
+                      </li>
+                    
+                      <li>
+                        <a href="/categories/随想/">
+                          <i class="fa fa-commenting-o" aria-hidden="true"></i>
+                          随想
+                        </a>
+                      </li>
+                    
+                      <li>
+                        <a href="/categories/转载/">
+                          <i class="fa fa-book" aria-hidden="true"></i>
+                          转载
+                        </a>
+                      </li>
+                    
+                  </ul>
+                
+              </li>
+            
+              <li>
+                <a href="javascript:;">
+                  <span class="faa-parent animated-hover">
+                    <i class="fa  fa-list-ul faa-vertical" aria-hidden="true"></i>
+                    清单
+                  </span>
+                </a>
+                
+                  <ul class="sub-menu">
+                    
+                      <li>
+                        <a href="/tags/悦读/">
+                          <i class="fa fa-th-list faa-bounce" aria-hidden="true"></i>
+                          书单
+                        </a>
+                      </li>
+                    
+                      <li>
+                        <a href="/bangumi/">
+                          <i class="fa fa-film faa-vertical" aria-hidden="true"></i>
+                          番组
+                        </a>
+                      </li>
+                    
+                      <li>
+                        <a href="/music/">
+                          <i class="fa fa-headphones" aria-hidden="true"></i>
+                          歌单
+                        </a>
+                      </li>
+                    
+                      <li>
+                        <a href="/tags/图集/">
+                          <i class="fa fa-photo" aria-hidden="true"></i>
+                          图集
+                        </a>
+                      </li>
+                    
+                  </ul>
+                
+              </li>
+            
+              <li>
+                <a href="/comment/">
+                  <span class="faa-parent animated-hover">
+                    <i class="fa  fa-pencil-square-o faa-tada" aria-hidden="true"></i>
+                    留言板
+                  </span>
+                </a>
+                
+              </li>
+            
+              <li>
+                <a href="/links/">
+                  <span class="faa-parent animated-hover">
+                    <i class="fa  fa-link faa-shake" aria-hidden="true"></i>
+                    友人帐
+                  </span>
+                </a>
+                
+              </li>
+            
+              <li>
+                <a href="/donate/">
+                  <span class="faa-parent animated-hover">
+                    <i class="fa  fa-heart faa-pulse" aria-hidden="true"></i>
+                    赞赏
+                  </span>
+                </a>
+                
+              </li>
+            
+              <li>
+                <a href="/">
+                  <span class="faa-parent animated-hover">
+                    <i class="fa  fa-leaf faa-wrench" aria-hidden="true"></i>
+                    关于
+                  </span>
+                </a>
+                
+                  <ul class="sub-menu">
+                    
+                      <li>
+                        <a href="/about/">
+                          <i class="fa fa-meetup" aria-hidden="true"></i>
+                          我？
+                        </a>
+                      </li>
+                    
+                      <li>
+                        <a href="/theme-sakura/">
+                          <i class="fa iconfont icon-sakura" aria-hidden="true"></i>
+                          主题
+                        </a>
+                      </li>
+                    
+                      <li>
+                        <a href="/lab/">
+                          <i class="fa fa-cogs" aria-hidden="true"></i>
+                          Lab
+                        </a>
+                      </li>
+                    
+                  </ul>
+                
+              </li>
+            
+              <li>
+                <a href="/client/">
+                  <span class="faa-parent animated-hover">
+                    <i class="fa  fa-android faa-vertical" aria-hidden="true"></i>
+                    客户端
+                  </span>
+                </a>
+                
+              </li>
+            
+              <li>
+                <a href="/atom.xml">
+                  <span class="faa-parent animated-hover">
+                    <i class="fa  fa-rss faa-pulse" aria-hidden="true"></i>
+                    RSS
+                  </span>
+                </a>
+                
+              </li>
+            
+          </ul>
+        </nav>
+      </div>
+    </div>
+  </div>
+</header>
+
+      <link rel="stylesheet" type="text/css" href="/css/sharejs.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/tocbot/4.4.2/tocbot.css">
+<div class="pattern-center-blank"></div>
+
+  <div class="pattern-center single-center">
+    <!-- 有配图默认渲染第一张 -->
+    <div class="pattern-attachment-img lazyload" style="background-image: url(https://cdn.jsdelivr.net/gh/pengjunlee/picture-warehouse/java-design-pattern/design-pattern14.png);" src="https://cdn.jsdelivr.net/gh/pengjunlee/picture-warehouse/img/orange.progress-bar-stripe-loader.svg" data-src="https://cdn.jsdelivr.net/gh/pengjunlee/picture-warehouse/java-design-pattern/design-pattern14.png">
+    </div>
+    <header class="pattern-header single-header">
+      <h1 class="entry-title">
+      Java设计模式系列之--适配器模式</h1>
+      <p class="entry-census">
+        <span>
+          <a href="pengjunlee">
+            <img src="https://cdn.jsdelivr.net/gh/pengjunlee/picture-warehouse/img/logo.jpg">
+          </a>
+        </span>
+        <span>
+          <a href="pengjunlee">李朋军</a>
+        </span>
+        <span class="bull">
+        ·</span>
+        2020-5-24<span class="bull">
+        ·</span>
+      <span id="busuanzi_value_page_pv"></span>次阅读</p>
+    </header>
+  </div>
+
+<div id="content" class="site-content">
+  <div id="primary" class="content-area">
+    <main id="main" class="site-main" role="main">
+      <article id="post-1" class="post-1 post type-post status-publish format-standard has-post-thumbnail hentry category-uncategorized">
+        <div class="toc"></div>
+        <!--<div class="toc-entry-content"><!-- 套嵌目录使用（主要为了支援评论）-->
+        
+        <div class="entry-content">
+          <h1 id="1、什么是适配器模式"><a href="#1、什么是适配器模式" class="headerlink" title="1、什么是适配器模式"></a>1、什么是适配器模式</h1><p>适配器(Adapter)模式又叫做包装( Wrapper )模式，是由GOF提出的23种设计模式中的一种结构型设计模式，Adapter模式的设计意图：将一个类的接口转换成客户希望的另外一个接口，使得原本由于接口不兼容而不能一起工作的那些类可以在一起工作。  </p>
+<h1 id="2、适配器模式的适用场景"><a href="#2、适配器模式的适用场景" class="headerlink" title="2、适配器模式的适用场景"></a>2、适配器模式的适用场景</h1><p><div align="center"><img src="https://cdn.jsdelivr.net/gh/pengjunlee/picture-warehouse/java-design-pattern/6.png" alt="静态代理模式结构示意图" title="静态代理模式结构示意图"></div></p>
+<p><div align="center"><img src="https://cdn.jsdelivr.net/gh/pengjunlee/picture-warehouse/java-design-pattern/7.png" alt="静态代理模式结构示意图" title="静态代理模式结构示意图"></div></p>
+<div align="left">
+
+<p>如图所示，有时，为复用而设计的工具类常常会因为它的接口与专业应用领域所需要的接口不匹配而不能够被复用。</p>
+<p>再举个Java界面程序开发中的真实案例：我们要设计一个绘图编辑器，这个编辑器允许用户绘制和排列基本图元(线、多边形、正文等)，图元对象的抽象我们用一个 Shape 接口来定义，所有的具体图元类型都要实现 Shape 接口：LineShape类对应于直线，PolygonShape类对应于多边形，TextShape类对应于正文，等等。</p>
+<p>对于像LineShape和PolygonShape这样的基本图元类由于它们的编辑功能本来就很有限，我们很容易就能够实现。但是对于可以显示和编辑正文的TextShape子类来说，实现相当困难，因为即使是基本的正文编辑也要涉及到复杂的屏幕刷新和缓冲区管理。同时，外界可能已经存在了一个现成的工具类TextView可以用于显示和编辑正文。理想的情况是我们可以复用这个TextView类以实现TextShape类的功能，不巧的是这个TextView类的设计者当时并没有考虑 Shape 的存在，导致TextView类和 Shape的接口互不兼容。</p>
+<p>类似地，像上面这种情况，我们希望能够复用TextView这样已经存在的类，但此类与我们系统要求的接口不匹配，我们该如何处理呢？</p>
+<p>我们可以改变TextView类使它兼容Shape接口，但前提是必须有这个TextView类的源代码。然而即使我们得到了这些源代码，修改TextView也是没有什么意义的：因为不应该仅仅为了实现一个应用，就去修改那些为复用而设计的工具箱类，迫使它们实现与特定领域相关的接口(此处是 Shape 接口)。</p>
+<p>我们可以不用上面的方法，转而定义一个TextShape类，由它来适配TextView的接口和Shape的接口。我们可以用下面两种方法做成这件事：</p>
+<ol>
+<li>将TextShape继承TextView并实现Shape接口</li>
+<li>将一个TextView实例作为TextShape的组成部分，并且使用TextView的接口去实现TextShape接口。</li>
+</ol>
+<p>以上两种方法恰恰对应于Adapter模式的两个版本：类的适配器模式和对象的适配器模式。我们将TextShape称之为适配器Adapter。</p>
+<p>从以上案例可以看出，适配器模式其实是一种补偿型模式，在进行全新系统设计的时候很少会用到。而当你遇到以下情况，你或许可以考虑使用Adapter模式。</p>
+<ul>
+<li>你想使用一个已经存在的类，而它的接口不符合你的需求。</li>
+<li>你想创建一个可以复用的类，该类可以与其他不相关的类或不可预见的类（即那些接口可能不一定兼容的类）协同工作。</li>
+<li>（仅适用于对象Adapter）你想使用一些已经存在的子类，但是不可能对每一个都进行子类化以匹配它们的接口。</li>
+</ul>
+<h1 id="3、适配器模式的结构"><a href="#3、适配器模式的结构" class="headerlink" title="3、适配器模式的结构"></a>3、适配器模式的结构</h1><p>适配器模式分为类的适配器模式(采用继承实现)、对象的适配器模式(采用对象组合方式实现)和接口的适配器模式三种。</p>
+<p>类适配器通过继承对一个类与另一个接口进行匹配，如下图所示。</p>
+<p><div align="center"><img src="https://cdn.jsdelivr.net/gh/pengjunlee/picture-warehouse/java-design-pattern/8.png" alt="类适配器模式结构示意图" title="类适配器模式结构示意图"></div></p>
+<div align="left">
+
+<p>类适配器模式涉及的角色及其职责如下：</p>
+<ul>
+<li>客户端(Client)类：该类需要与符合条件的特定的接口协同工作。</li>
+<li>目标(Target)接口类：客户端所需要的接口，在类适配器模式下该角色只能是接口。</li>
+<li>适配者(Adaptee)类：需要被适配的类，适配者类一般是一个具体类，包含了客户端希望使用的某些业务方法。</li>
+<li>适配器(Adapter)类：该类对适配者类和目标接口类进行适配，在类适配器模式下通过继承方式实现，即：Adapter 继承 Adaptee 并实现 Target 接口。</li>
+</ul>
+<p>类适配器模式结构示意源代码如下：<br>Target类包含Client类所需要的与特定领域相关的接口。</p>
+<pre><code>public interface Target {
+    // Adaptee适配者有此方法的实现，但方法名可以不同
+    void specificOperation();
+
+    // Adaptee适配者没有的其他方法
+    void otherOperation();
+}
+</code></pre><p>Adaptee类包含了客户端希望使用的某些业务方法，但Adaptee类不符合Client类所需接口的要求。</p>
+<pre><code>public class Adaptee {
+    public void operation() {
+        System.out.println(&quot;执行Adaptee的operation()方法...&quot;);
+    }
+}
+</code></pre><p>Adapter类继承Adaptee并实现Target接口，这样Adapter类既符合Client类所需接口的要求，又包含了Client类希望使用的而原属于Adaptee类的业务方法。</p>
+<pre><code>public class Adapter extends Adaptee implements Target {
+    @Override
+    public void specificOperation() {
+        this.operation();
+    }
+
+    @Override
+    public void otherOperation() {
+        System.out.println(&quot;执行Adapter的otherOperation()方法...&quot;);
+    }
+}
+</code></pre><p>为简单起见我们为Client类添加一个clientOperation()方法，该方法需要传入一个Target接口对象，在该Target接口对象中我们要复用现有的Adaptee类的方法。</p>
+<pre><code>public class Client {
+
+    public static void clientOperation(Target target) {
+        target.specificOperation();
+        target.otherOperation();
+    }
+
+    public static void main(String[] args) {
+        Adapter adapter = new Adapter();
+        clientOperation(adapter);
+    }
+}
+</code></pre><p>运行程序打印结果如下：</p>
+<p>执行Adaptee的operation()方法…<br>执行Adapter的otherOperation()方法…  </p>
+<p>对象适配器通过组合对一个类及其子类与另一个接口进行匹配，如下图所示。   </p>
+<p><div align="center"><img src="https://cdn.jsdelivr.net/gh/pengjunlee/picture-warehouse/java-design-pattern/9.png" alt="对象适配器模式结构示意图" title="对象适配器模式结构示意图"></div></p>
+<div align="left">
+
+<p>适配器模式涉及的角色及其职责如下：</p>
+<ul>
+<li>客户端(Client)类：该类需要与符合条件的特定的接口协同工作。</li>
+<li>目标(Target)接口类：客户端所需要的接口，在对象适配器模式下该角色可以是接口、抽象类或者非final的具体类。</li>
+<li>适配者(Adaptee)类：需要被适配的类，适配者类一般是一个具体类，包含了客户端希望使用的某些业务方法。</li>
+<li>适配器(Adapter)类：该类对适配者类和目标接口类进行适配，在对象适配器模式下通过组合方式实现，即：Adapter类继承Target类或者实现Target接口，并在其内部包含一个Adaptee对象的引用，通过对其内部的Adaptee对象的调用实现客户端所需要的接口。　</li>
+</ul>
+<p>接下来以Target为接口举例，对象适配器模式结构示意源代码如下：<br>Target类包含Client类所需要的与特定领域相关的接口。</p>
+<pre><code>public interface Target {
+    // Adaptee适配者有此方法的实现，但方法名可以不同
+    void specificOperation();
+    // Adaptee适配者没有的其他方法
+    void otherOperation();
+}
+</code></pre><p>Adaptee 包含了 Client 希望使用的某些业务方法，但 Adaptee 不符合 Client 的接口要求。</p>
+<pre><code>public class Adaptee {
+    public void operation() {
+        System.out.println(&quot;执行Adaptee的operation()方法...&quot;);
+    }
+}
+</code></pre><p>Adapter 实现 Target 接口，并在其内部包含一个 Adaptee 对象的引用，通过对其内部的 Adaptee 对象的方法调用来实现客户端所需要的接口。 </p>
+<pre><code>public class Adapter implements Target {
+    private Adaptee adaptee;
+    public Adapter(Adaptee adaptee) {
+        super();
+        this.adaptee = adaptee;
+    }
+    @Override
+    public void specificOperation() {
+        this.adaptee.operation();
+    }
+    @Override
+    public void otherOperation() {
+        System.out.println(&quot;执行Adapter的otherOperation()方法...&quot;);
+    }
+}
+</code></pre><p>同样的，Client 依旧要与一个 Target 接口协同工作，对Client进行简单修改。 </p>
+<pre><code>public class Client {
+
+    public static void clientOperation(Target target){
+        target.specificOperation();
+        target.otherOperation();
+    }
+
+    public static void main(String[] args) {
+        Adapter adapter = new Adapter(new Adaptee());
+        clientOperation(adapter);
+    }
+
+}
+</code></pre><p>运行程序打印结果如下：</p>
+<p>执行Adaptee的operation()方法…<br>执行Adapter的otherOperation()方法…  </p>
+<p>接口适配器模式又被叫作缺省适配器(DefaultAdapter)模式，DefaultAdapter 为一个接口提供缺省实现，这样需实现该接口的类就可以直接从 DefaultAdapter 进行扩展，而不必再从原有接口进行扩展。当原接口中定义的方法很多，而其中大部分方法又不被需要时，这种模式非常实用。由缺省适配器类（由于该类一般都只为接口提供缺省的空实现，所以该类一般都被定义为抽象类）直接实现接口，并为所有方法提供缺省实现。这样，如果有用户类需要实现该接口就可以直接继承适配器类，并只需实现感兴趣的方法就可以了。 </p>
+<p><div align="center"><img src="https://cdn.jsdelivr.net/gh/pengjunlee/picture-warehouse/java-design-pattern/10.png" alt="缺省适配器模式结构示意图" title="缺省适配器模式结构示意图"></div></p>
+<div align="left">
+
+<p>缺省适配器模式涉及的角色及其职责如下： </p>
+<ul>
+<li>目标(Target)接口类：用户类所需要实现的接口，定义有很多方法，但这些方法不一定全都被用户类所需要。</li>
+<li>缺省适配器(DefaultAdapter)类：实现目标接口，并为所有接口方法提供缺省实现。</li>
+<li>具体(ConcreteClass)用户类：用户类要实现某一个接口，但是又用不到接口所规定的所有的方法。</li>
+</ul>
+<p>类适配器模式结构示意源代码如下：<br>Target接口类是用户类所需要实现的接口，该接口定义有很多方法。</p>
+<pre><code>public interface Target {
+    public void operation1();
+    public void operation2();
+    public void operation3();
+    public void operation4();
+    public void operation5();
+    public void operation6();
+}
+</code></pre><p>DefaultAdapter类实现Target接口，并为所有接口方法提供缺省实现。 </p>
+<pre><code>public class DefaultAdapter implements Target {
+    public void operation1() {
+        System.out.println(&quot;执行缺省适配器的operation1()方法...&quot;);
+    }
+    public void operation2() {
+        System.out.println(&quot;执行缺省适配器的operation2()方法...&quot;);
+    }
+    public void operation3() {
+        System.out.println(&quot;执行缺省适配器的operation3()方法...&quot;);
+    }
+    public void operation4() {
+        System.out.println(&quot;执行缺省适配器的operation4()方法...&quot;);
+    }
+    public void operation5() {
+        System.out.println(&quot;执行缺省适配器的operation5()方法...&quot;);
+    }
+    public void operation6() {
+        System.out.println(&quot;执行缺省适配器的operation6()方法...&quot;);
+    }
+}
+</code></pre><p>接下来就要定义用户类了，我们定义两个具体用户类 ConcreteClassA 和 ConcreteClassB ，两个类都只实现 Target 接口中的部分方法。 </p>
+<pre><code>public class ConcreteClassA extends DefaultAdapter {
+    public void operation3() {
+        System.out.println(&quot;执行ConcreteClassA的operation3()方法...&quot;);
+    }
+}
+</code></pre><p><br></p>
+<pre><code>public class ConcreteClassB extends DefaultAdapter {
+    public void operation4() {
+        System.out.println(&quot;执行ConcreteClassB的operation4()方法...&quot;);
+    }
+    public void operation5() {
+        System.out.println(&quot;执行ConcreteClassB的operation5()方法...&quot;);
+    }
+}
+</code></pre><p>在很多情况下，用户类会需要实现某一个接口，但是又用不到接口所规定的所有的方法。通常的处理方法是，用户类要实现所有的方法，为那些有用的方法添加实现，为那些没有用的方法添加空的、平庸的实现。为不需要的方法添加空实现其实是一种浪费，有时也是一种混乱。除非看过这些方法的源代码或文档，程序员可能会以为这些方法不是空的。即便他知道其中有一些方法是空的，也不一定知道哪些方法是空的，哪些方法不是空的。缺省适配模式可以很好的处理这一情况。</p>
+<p>从以上两个具体用户类 ConcreteClassA 和 ConcreteClassB的代码可以看出：两个用户类通过继承缺省适配器类，而无需再为接口中的全部方法添加实现。 </p>
+<h1 id="4、适配器模式应用举例"><a href="#4、适配器模式应用举例" class="headerlink" title="4、适配器模式应用举例"></a>4、适配器模式应用举例</h1><p><strong>应用场景：</strong><br>SD内存卡是一种很常见的手机外置存储设备，我们可以通过给手机插入一个SD卡来扩展手机的存储空间， 当SD卡中存储的文件很多需要整理的时候问题来了，直接在手机上对SD卡中的文件进行整理(拷贝、删除、移动、修改等等)操作起来很不方便，于是我们想如果能够将SD卡插入电脑，然后通过电脑对SD卡上的文件进行整理该多方便。可不幸的是，大多数的电脑仅能连接具有USB接口的设备，显然，SD卡并不具备USB接口。</p>
+<p>以上是适配器模式的一个典型应用场景，SD卡是专门为手机而设计的，在设计之初也并未想过要去把它插入电脑。现在我们想要把SD卡插入到电脑了，却发现SD卡因不具有USB插头而不能插入电脑。此时，再去重新设计和生产一种新型的具有USB接口的SD卡显然也并不合理。但是，很明显SD卡与U盘等USB接口设备都是存储设备，二者并无本质区别，理论上来说是完全可以插入电脑的。那么我们到底该怎么办呢？</p>
+<p>以上问题的解决方法其实很简单：找一个USB接口的读卡器，将SD卡插入到读卡器，再将读卡器插入电脑，此时你会发现SD卡连上电脑了。</p>
+<p>上例中的读卡器其实就是一个适配SD卡和USB接口的适配器，接下来我们用Java代码来进行演示说明。</p>
+<p>首先，为了使演示更加清晰，我们重新定义一个File类，用来表示SD卡中存储的文件。</p>
+<pre><code>public class File {
+    //文件名
+    private String fileName;
+    //文件大小
+    private Double fileSize;
+    //构造方法中指定文件名和文件大小
+    public File(String fileName, Double fileSize) {
+        super();
+        this.fileName = fileName;
+        this.fileSize = fileSize;
+    }
+    public String getFileName() {
+        return fileName;
+    }
+    public Double getFileSize() {
+        return fileSize;
+    }
+}
+</code></pre><p>我们的SD卡类提供了基本的文件添加、文件删除、显示已存储文件的功能，其完整代码如下。   </p>
+<pre><code>import java.util.HashMap;
+import java.util.Map;
+import java.util.Map.Entry;
+
+public class SDCard {
+
+    // SD卡的存储空间总大小
+    private Double volume;
+
+    // SD卡的可用存储空间大小
+    private Double vacantVolume;
+
+    // 将SD卡中存储的文件保存到一个Map里面
+    private Map&lt;String, File&gt; fileMap = new HashMap&lt;String, File&gt;();
+
+    public SDCard(Double volume) {
+        super();
+        this.volume = volume;
+        this.vacantVolume = volume;
+    }
+
+    public Double getVacantVolume() {
+        return vacantVolume;
+    }
+
+    public void setVacantVolume(Double vacantVolume) {
+        this.vacantVolume = vacantVolume;
+    }
+
+    public Double getVolume() {
+        return volume;
+    }
+
+    public Map&lt;String, File&gt; getFileMap() {
+        return fileMap;
+    }
+
+    public void addFile(File file) {
+        File tempFile = this.fileMap.get(file.getFileName());
+        if (null != tempFile) {
+            System.out.println(&quot;文件《&quot; + file.getFileName() + &quot;》已存在，添加失败...&quot;);
+        } else {
+            if (this.vacantVolume &gt; file.getFileSize()) {
+
+                this.fileMap.put(file.getFileName(), file);
+                this.vacantVolume = this.vacantVolume - file.getFileSize();
+                System.out.println(&quot;添加文件《&quot; + file.getFileName() + &quot;》成功...&quot;);
+            } else {
+                System.out.println(&quot;剩余存储空间不足，文件《&quot; + file.getFileName()
+                        + &quot;》添加失败...&quot;);
+            }
+        }
+    }
+
+    public void deleteFile(String fileName) {
+        File tempFile = this.fileMap.get(fileName);
+        if (null == tempFile) {
+            System.out.println(&quot;文件《&quot; + fileName + &quot;》不存在，删除失败...&quot;);
+        } else {
+            this.fileMap.remove(fileName);
+            this.vacantVolume = this.vacantVolume + tempFile.getFileSize();
+            System.out.println(&quot;删除文件《&quot; + fileName + &quot;》成功...&quot;);
+        }
+    }
+
+    public void listFiles() {
+        if (fileMap.size() &gt; 0) {
+            System.out.println();
+            System.out
+                    .println(&quot;$$$$$$$$$$$$$$$$$$$$文件列表$$$$$$$$$$$$$$$$$$$$&quot;);
+            int i = 1;
+            for (Entry&lt;String, File&gt; entry : fileMap.entrySet()) {
+                System.out.println(i + &quot;. 文件名：《&quot;
+                        + entry.getValue().getFileName() + &quot;》，文件大小：&quot;
+                        + entry.getValue().getFileSize() + &quot;兆。&quot;);
+                i++;
+            }
+            System.out.println();
+        }
+    }
+}
+</code></pre><p>接下来定义一个USB存储设备的接口类 USBDevice，其声明的方法如下。  </p>
+<pre><code>import java.util.List;
+
+public interface USBDevice {
+
+    //返回USB存储设备的总容量
+    public Double getUSBVolume();
+    //返回USB存储设备的剩余可用空间
+    public Double getUSBVacantVolume();
+    //列出USB存储设备中的文件信息
+    public void listUSBFiles();
+    //添加文件到USB存储设备
+    public void addToUSB(File file);
+    //从USB存储设备删除单个文件
+    public void deleteFromUSB(String fileName);
+    //从USB存储设备批量删除文件
+    public void deleteFromUSB(List&lt;String&gt; fileNames);
+
+}
+</code></pre><p>接下来该定义我们的适配器类了，该类名为 CardReader (读卡器),它通过调用SD卡类中的方法实现了在 USBDevice 中声明的接口方法，代码如下。 </p>
+<pre><code>import java.util.List;
+
+public class CardReader implements USBDevice{
+
+    private SDCard sdCard;
+
+    public CardReader(SDCard sdCard) {
+        super();
+        this.sdCard = sdCard;
+    }
+
+    @Override
+    public Double getUSBVolume() {
+        return this.sdCard.getVolume();
+    }
+
+    @Override
+    public Double getUSBVacantVolume() {
+        return this.sdCard.getVacantVolume();
+    }
+
+    @Override
+    public void listUSBFiles() {
+        this.sdCard.listFiles();
+    }
+
+
+    @Override
+    public void addToUSB(File file) {
+        this.sdCard.addFile(file);        
+    }
+
+    @Override
+    public void deleteFromUSB(String fileName) {
+        this.sdCard.deleteFile(fileName);        
+    }
+
+    @Override
+    public void deleteFromUSB(List&lt;String&gt; fileNames) {
+        if(null!=fileNames &amp;&amp; fileNames.size()&gt;0){
+            for(String fileName:fileNames){
+                this.sdCard.deleteFile(fileName);
+            }
+        }        
+    }
+}
+</code></pre><p>最后定义电脑 Computer 类，该类仅支持插入具有USB接口的设备(即实现了 USBDevice 接口的对象)，我们在此为其添加了一个 USBDevice 的内部属性代表连接到电脑的USB设备，在 Computer 类中创建一个Main方法进行测试。 </p>
+<pre><code>import java.util.ArrayList;
+
+public class Computer {
+
+    private USBDevice usbDevice;
+
+    private USBDevice getUsbDevice() {
+        return usbDevice;
+    }
+
+    private void setUsbDevice(USBDevice usbDevice) {
+        this.usbDevice = usbDevice;
+    }
+
+    public static void main(String[] args) {
+
+        // 新建一个大小为1024M的SD卡
+        SDCard sdCard = new SDCard(1024D);
+
+        // 在SD卡中存入两个文件
+        sdCard.addFile(new File(&quot;Java从入门到放弃.pdf&quot;, 10D));
+        sdCard.addFile(new File(&quot;不良人之灵主.avi&quot;, 68D));
+
+        // 拷入重复文件测试
+        sdCard.addFile(new File(&quot;不良人之灵主.avi&quot;, 68D));
+
+        // 列出SD卡中文件信息
+        sdCard.listFiles();
+
+        // 接下来将SD卡插入到读卡器
+        CardReader cardReader = new CardReader(sdCard);
+        Computer computer = new Computer();
+
+        // 再将读卡器插入电脑
+        computer.setUsbDevice(cardReader);
+        computer.getUsbDevice().addToUSB(new File(&quot;唐伯虎点秋香.rmvb&quot;, 600D));
+        computer.getUsbDevice().addToUSB(new File(&quot;C++基础算法.txt&quot;, 0.01D));
+        computer.getUsbDevice().addToUSB(new File(&quot;冰河世纪4.rmvb&quot;, 888D));
+        computer.getUsbDevice().listUSBFiles();
+        computer.getUsbDevice().deleteFromUSB(&quot;Java从入门到放弃.pdf&quot;);
+        computer.getUsbDevice().listUSBFiles();
+        computer.getUsbDevice().deleteFromUSB(new ArrayList&lt;String&gt;() {
+            {
+                add(&quot;Java从入门到放弃.pdf&quot;);
+                add(&quot;不良人之灵主.avi&quot;);
+            }
+        });
+        computer.getUsbDevice().listUSBFiles();
+    }
+}
+</code></pre><p>运行程序结果打印如下：  </p>
+<p>添加文件《Java从入门到放弃.pdf》成功…<br>添加文件《不良人之灵主.avi》成功…<br>文件《不良人之灵主.avi》已存在，添加失败…   </p>
+<p>$$$$$$$$$$$$$$$$$$$$文件列表$$$$$$$$$$$$$$$$$$$$  </p>
+<ol>
+<li>文件名：《Java从入门到放弃.pdf》，文件大小：10.0兆。  </li>
+<li>文件名：《不良人之灵主.avi》，文件大小：68.0兆。  </li>
+</ol>
+<p>添加文件《唐伯虎点秋香.rmvb》成功…<br>添加文件《C++基础算法.txt》成功…<br>剩余存储空间不足，文件《冰河世纪4.rmvb》添加失败…  </p>
+<p>$$$$$$$$$$$$$$$$$$$$文件列表$$$$$$$$$$$$$$$$$$$$  </p>
+<ol>
+<li>文件名：《唐伯虎点秋香.rmvb》，文件大小：600.0兆。  </li>
+<li>文件名：《Java从入门到放弃.pdf》，文件大小：10.0兆。  </li>
+<li>文件名：《C++基础算法.txt》，文件大小：0.01兆。  </li>
+<li>文件名：《不良人之灵主.avi》，文件大小：68.0兆。  </li>
+</ol>
+<p>删除文件《Java从入门到放弃.pdf》成功…  </p>
+<p>$$$$$$$$$$$$$$$$$$$$文件列表$$$$$$$$$$$$$$$$$$$$  </p>
+<ol>
+<li>文件名：《唐伯虎点秋香.rmvb》，文件大小：600.0兆。  </li>
+<li>文件名：《C++基础算法.txt》，文件大小：0.01兆。  </li>
+<li>文件名：《不良人之灵主.avi》，文件大小：68.0兆。  </li>
+</ol>
+<p>文件《Java从入门到放弃.pdf》不存在，删除失败…<br>删除文件《不良人之灵主.avi》成功…  </p>
+<p>$$$$$$$$$$$$$$$$$$$$文件列表$$$$$$$$$$$$$$$$$$$$  </p>
+<ol>
+<li>文件名：《唐伯虎点秋香.rmvb》，文件大小：600.0兆。  </li>
+<li>文件名：《C++基础算法.txt》，文件大小：0.01兆。  </li>
+</ol>
+<h1 id="5、适配器模式的选择"><a href="#5、适配器模式的选择" class="headerlink" title="5、适配器模式的选择"></a>5、适配器模式的选择</h1><p>通过使用适配器模式，我们可以达到以下目的：</p>
+<ol>
+<li>复用现有的类，解决现有类和复用环境要求不一致的问题。</li>
+<li>将目标类和适配者类解耦，通过引入一个适配器类重用现有的适配者类，而无需修改原有代码。</li>
+<li>一个对象适配器可以把适配者类和它的子类都适配到目标接口。</li>
+</ol>
+<p>类适配器模式和对象适配器模式比较：</p>
+<ul>
+<li>类适配器通过继承方式来实现，是静态的；而对象适配器通过组合方式来实现，是动态的。</li>
+<li>对于类适配器，适配器直接继承自 Adaptee ，这使得适配器不能和 Adaptee 的子类一起工作。</li>
+<li>对于对象适配器，同一个适配器可以把 Adaptee 和它的子类都适配到目标接口。</li>
+<li>对于类适配器，适配器可以重定义 Adaptee 的部分行为，相当于子类覆盖父类的部分实现方法。</li>
+<li>对于对象适配器，要重定义 Adaptee 的行为比较困难，这种情况下，需要定义 Adaptee 的子类来实现重定义，然后让适配器组合子类。</li>
+</ul>
+<h1 id="参考文章"><a href="#参考文章" class="headerlink" title="参考文章"></a>参考文章</h1><p>&lt; GoF经典的著作《 Design Patterns: Elements of Reusable Object-Oriented Software 》（《设计模式：可复用面向对象软件的基础》）&gt;</p>
+<p><a href="https://www.ibm.com/developerworks/cn/java/j-lo-adapter-pattern/index.html" title="适配器模式原理及实例介绍" target="_blank" rel="noopener">https://www.ibm.com/developerworks/cn/java/j-lo-adapter-pattern/index.html</a></p>
+<p><a href="https://blog.csdn.net/name_110/article/details/6903819" title="JDK中的设计模式之适配器模式" target="_blank" rel="noopener">https://blog.csdn.net/name_110/article/details/6903819</a></p>
+<p><a href="https://www.cnblogs.com/xwdreamer/archive/2012/03/29/2424008.html" title="设计模式之缺省适配模式" target="_blank" rel="noopener">https://www.cnblogs.com/xwdreamer/archive/2012/03/29/2424008.html</a></p>
+</div></div></div></div>
+        </div>
+        <!-- .entry-content -->
+        <div class="single-reward">
+          <div class="reward-open">赏
+            <div class="reward-main">
+              <ul class="reward-row">
+                <li class="alipay-code"><img src="https://cdn.jsdelivr.net/gh/pengjunlee/picture-warehouse/img/AliPayQR.jpg"></li>
+                <li class="wechat-code"><img src="https://cdn.jsdelivr.net/gh/pengjunlee/picture-warehouse/img/WeChanQR.jpg"></li>
+              </ul>
+            </div>
+          </div>
+        </div>
+        <div style="text-align:center; width: 100%" class="social-share share-mobile" data-disabled="diandian, tencent"></div>
+        <footer class="post-footer">
+          <div class="post-lincenses"><a href="https://creativecommons.org/licenses/by-nc-sa/4.0/deed.zh" target="_blank" rel="nofollow"><i class="fa fa-creative-commons" aria-hidden="true"></i> 知识共享署名-非商业性使用-相同方式共享 4.0 国际许可协议</a></div>
+          <div class="post-tags">
+          </div>
+          <div class="post-share">
+            <div class="social-share sharehidden share-component"></div>
+            <i class="iconfont show-share icon-forward"></i>
+          </div>
+        </footer><!-- .entry-footer -->
+      </article>
+      <!-- #post-## -->
+      <div class="toc" style="background: none;"></div>
+      <section class="post-squares nextprev">
+        
+          
+            <div class="post-nepre half previous">
+          
+            <a href="/2020/05/24/Java设计模式之--享元模式/" rel="prev">
+              <div class="background">
+                <img class="lazyload" src="https://cdn.jsdelivr.net/gh/pengjunlee/picture-warehouse/img/orange.progress-bar-stripe-loader.svg" data-src="https://cdn.jsdelivr.net/gh/pengjunlee/picture-warehouse/java-design-pattern/design-pattern13.png" style="width: 100%; height: 100%; object-fit: cover; pointer-events: none;" onerror="imgError(this,3)" src="https://cdn.jsdelivr.net/gh/pengjunlee/picture-warehouse/java-design-pattern/design-pattern13.png">
+              </div>
+              <span class="label">
+              Previous Post</span>
+              <div class="info">
+                <h3>
+                Java设计模式系列之--享元模式</h3>
+                <hr>
+              </div>
+            </a>
+          </div>
+        
+        
+          
+            <div class="post-nepre half next">
+          
+            <a href="/2020/05/24/Java设计模式之--动态代理模式（下）/" rel="next">
+              <div class="background">
+                <img class="lazyload" src="https://cdn.jsdelivr.net/gh/pengjunlee/picture-warehouse/img/orange.progress-bar-stripe-loader.svg" data-src="https://cdn.jsdelivr.net/gh/pengjunlee/picture-warehouse/java-design-pattern/design-pattern15.png" style="width: 100%; height: 100%; object-fit: cover; pointer-events: none;" onerror="imgError(this,3)" src="https://cdn.jsdelivr.net/gh/pengjunlee/picture-warehouse/java-design-pattern/design-pattern15.png">
+              </div>
+              <span class="label">
+              Next Post</span>
+              <div class="info">
+                <h3>
+                Java设计模式系列之--动态代理模式（下）</h3>
+                <hr>
+              </div>
+            </a>
+          </div>
+        
+      </section>
+      
+<div id="vcomments"></div>
+<script>
+  window.onload = function(){
+      var valine = new Valine();
+      valine.init({
+        el: '#vcomments',
+        appId: "k0QcRvFFw7AovKS8un6pys2S-gzGzoHsz",
+        appKey: "Y5w42nyHhdKlYHT00svHuIya",
+        path: window.location.pathname,
+        placeholder: "你是我一生只会遇见一次的惊喜 ..."
+      })
+  }
+</script>
+
+      <section class="author-profile">
+        <div class="info" itemprop="author" itemscope="" itemtype="https://schema.org/Person">
+          <a href="pengjunlee" class="profile gravatar"><img src="https://cdn.jsdelivr.net/gh/pengjunlee/picture-warehouse/img/logo.jpg" itemprop="image" alt="李朋军" height="70" width="70"></a>
+          <div class="meta">
+            <span class="title">Author</span>
+            <h3 itemprop="name">
+            <a href="pengjunlee" itemprop="url" rel="author">李朋军</a>
+            </h3>
+          </div>
+        </div>
+        <hr>
+        <p><i class="iconfont icon-write"></i>为他人带来阳光的人，自己也一定会沐浴在阳光下。</p>
+      </section>
+    </main><!-- #main -->
+  </div><!-- #primary -->
+</div>
+
+
+
+    </div>    
+    <div class="ins-search">
+    <div class="ins-search-mask"></div>
+    <div class="ins-search-container">
+        <div class="ins-input-wrapper">
+            <input type="text" class="ins-search-input" placeholder="请输入关键词..."/>
+            <span class="ins-close ins-selectable"><i class="fa fa-times-circle"></i></span>
+        </div>
+        <div class="ins-section-wrapper">
+            <div class="ins-section-container"></div>
+        </div>
+    </div>
+</div>
+<script>
+(function (window) {
+    var INSIGHT_CONFIG = {
+        TRANSLATION: {
+            POSTS: '文章',
+            // PAGES: '页面',
+            CATEGORIES: '分类',
+            TAGS: '标签',
+        },
+        ROOT_URL: '/',
+        CONTENT_URL: '/content.json',
+    };
+    window.INSIGHT_CONFIG = INSIGHT_CONFIG;
+})(window);
+</script>
+    <!-- <footer id="footer">
+  
+  <div class="outer">
+    <div id="footer-info" class="inner">
+      &copy; 2023 pengjunlee<br>
+      powered_by <a href="http://hexo.io/" target="_blank">Hexo</a>
+    </div>
+  </div>
+</footer> -->
+<footer id="colophon" class="site-footer" role="contentinfo">
+  <div class="site-info">
+    <div class="footertext">
+      <div class="img-preload">
+        <img src="https://cdn.jsdelivr.net/gh/honjun/cdn@1.6/img/other/wordpress-rotating-ball-o.svg">
+        <img src="https://cdn.jsdelivr.net/gh/honjun/cdn@1.6/img/other/disqus-preloader.svg">
+      </div>
+      <p style="color: #666666;">&copy 2018</p>
+    </div>
+    <div class="footer-device">
+    <p style="font-family: 'Ubuntu', sans-serif;">
+        <span style="color: #b9b9b9;">Theme <a href="https://github.com/honjun/hexo-theme-sakura" target="_blank" style="color: #b9b9b9;;text-decoration: underline dotted rgba(0, 0, 0, .1);">Sakura</a> <i class="iconfont icon-sakura rotating" style="color: #ffc0cb;display:inline-block"></i> by <a href="https://2heng.xin/" target="_blank" style="color: #b9b9b9;;text-decoration: underline dotted rgba(0, 0, 0, .1);">Mashiro</a>&<a href="https://www.hojun.cn/" target="_blank" style="color: #b9b9b9;;text-decoration: underline dotted rgba(0, 0, 0, .1);">Hojun</a>, Powered by Hexo, Hosted by Coding Pages</a>
+        </span>
+      </p>
+    </div>
+  </div><!-- .site-info -->
+</footer>
+
+
+
+<!-- <script src="/js/tocbot.js"></script> -->
+<script type="text/javascript" src="/js/lib.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/clipboard@2/dist/clipboard.min.js"></script>
+<script type="text/javascript" src="/js/InsightSearch.js"></script>
+<script type="text/javascript" src="/js/jquery.fancybox.min.js"></script>
+<script type="text/javascript" src="/js/zoom.min.js"></script>
+<script type="text/javascript" src="/js/sakura-app.js"></script>
+<script src="//cdn1.lncld.net/static/js/3.0.4/av-min.js"></script>
+<script src='//unpkg.com/valine@1.3.4/dist/Valine.min.js'></script>
+<script src="/js/botui.js"></script>
+<!-- 不蒜子 网页计数器 -->
+<script src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+<!-- <script src="https://cdnjs.cloudflare.com/ajax/libs/tocbot/4.4.2/tocbot.min.js"></script> -->
+<script type="text/javascript">
+/* <![CDATA[ */
+if (/Android|webOS|iPhone|iPod|BlackBerry/i.test(navigator.userAgent)) {
+  var Poi = {"pjax":"1","movies":{"url": "https://cdn.jsdelivr.net/gh/pengjunlee/picture-warehouse/img","name":"Unbroken.mp4","live":"close"},"windowheight":"fixed","codelamp":"close","ajaxurl":"","order":"asc","formpostion":"bottom"};
+} else {
+  var Poi = {"pjax":"1","movies":{"url": "https://cdn.jsdelivr.net/gh/pengjunlee/picture-warehouse/img","name":"Unbroken.mp4","live":"open"},"windowheight":"auto","codelamp":"close","ajaxurl":"","order":"asc","formpostion":"bottom"};
+}
+/* ]]> */
+
+</script>
+<script>
+$(document).ready(function() {
+  if ($(".toc").length > 0 && document.body.clientWidth > 1200) {
+    if ($(".pattern-center").length > 0) { //有图的情况
+      tocbot.init({
+          // Where to render the table of contents.
+          tocSelector: '.toc', // 放置目录的容器
+          // Where to grab the headings to build the table of contents.
+          contentSelector: '.entry-content', // 正文内容所在
+          // Which headings to grab inside of the contentSelector element.
+          scrollSmooth: true,
+          headingSelector: 'h1, h2, h3, h4, h5', // 需要索引的标题级别
+          headingsOffset: -400,
+          scrollSmoothOffset: -85
+      });
+    } else {
+      tocbot.init({
+          // Where to render the table of contents.
+          tocSelector: '.toc', // 放置目录的容器
+          // Where to grab the headings to build the table of contents.
+          contentSelector: '.entry-content', // 正文内容所在
+          // Which headings to grab inside of the contentSelector element.
+          scrollSmooth: true,
+          headingSelector: 'h1, h2, h3, h4, h5', // 需要索引的标题级别
+          headingsOffset: -85,
+          scrollSmoothOffset: -85
+      });
+    }
+    var offsetTop = $('.toc').offset().top - 95;
+    window.onscroll = function() {
+      var scrollTop = window.pageYOffset || document.documentElement.scrollTop || document.body.scrollTop;
+      if (scrollTop >= offsetTop) {
+        $('.toc').addClass('toc-fixed');
+      } else {
+        $('.toc').removeClass('toc-fixed');
+      }
+    }
+  }
+});
+</script>
+
+    <div class="openNav no-select" style="height: 50px;">
+      <div class="iconflat no-select" style="width: 50px; height: 50px;">
+        <div class="icon"></div>
+      </div>
+      <div class="site-branding search-form-submit">
+        <i class="iconfont js-toggle-search iconsearch icon-search"></i>
+      </div>
+    </div>
+  </section>
+  <div id="mo-nav" class="">
+  <div class="m-avatar">
+    <img src="https://cdn.jsdelivr.net/gh/pengjunlee/picture-warehouse/img/avatar.jpg">
+  </div>
+  <p style="text-align: center; color: #333; font-weight: 900; font-family: 'Ubuntu', sans-serif; letter-spacing: 1.5px">李朋军</p>
+  <p style="text-align: center; word-spacing: 20px;">
+    
+      
+        <a href="http://github.com/honjun" class="fa fa-github" target="_blank" style="color: #333; margin-left:20px"></a>
+      
+        <a href="http://weibo.com/mashirozx?is_all=1" class="fa fa-weibo" target="_blank" style="color: #dd4b39; margin-left:20px"></a>
+      
+        <a href="https://wpa.qq.com/msgrd?v=3&uin=954655431&site=qq&menu=yes" class="fa fa-qq" target="_blank" style="color: #25c6fe; margin-left:20px"></a>
+      
+    
+  </p>
+  <ul id="menu-new-1" class="menu">
+    
+      <li>
+        <a href="/">
+          <span class="faa-parent animated-hover">
+            <i class="fa  fa-fort-awesome faa-shake" aria-hidden="true"></i>
+            首页
+          </span>
+        </a>
+        
+      </li>
+    
+      <li>
+        <a href="/archives">
+          <span class="faa-parent animated-hover">
+            <i class="fa  fa-archive faa-shake" aria-hidden="true"></i>
+            归档
+          </span>
+        </a>
+        
+          <ul class="sub-menu">
+            
+              <li>
+                <a href="/categories/编程/">
+                  <i class="fa fa-code" aria-hidden="true"></i>
+                  编程
+                </a>
+              </li>
+            
+              <li>
+                <a href="/categories/技术/">
+                  <i class="fa fa-cogs" aria-hidden="true"></i>
+                  技术
+                </a>
+              </li>
+            
+              <li>
+                <a href="/categories/生活/">
+                  <i class="fa fa-file-text-o" aria-hidden="true"></i>
+                  生活
+                </a>
+              </li>
+            
+              <li>
+                <a href="/categories/资源/">
+                  <i class="fa fa-cloud-download" aria-hidden="true"></i>
+                  资源
+                </a>
+              </li>
+            
+              <li>
+                <a href="/categories/随想/">
+                  <i class="fa fa-commenting-o" aria-hidden="true"></i>
+                  随想
+                </a>
+              </li>
+            
+              <li>
+                <a href="/categories/转载/">
+                  <i class="fa fa-book" aria-hidden="true"></i>
+                  转载
+                </a>
+              </li>
+            
+          </ul>
+        
+      </li>
+    
+      <li>
+        <a href="javascript:;">
+          <span class="faa-parent animated-hover">
+            <i class="fa  fa-list-ul faa-vertical" aria-hidden="true"></i>
+            清单
+          </span>
+        </a>
+        
+          <ul class="sub-menu">
+            
+              <li>
+                <a href="/tags/悦读/">
+                  <i class="fa fa-th-list faa-bounce" aria-hidden="true"></i>
+                  书单
+                </a>
+              </li>
+            
+              <li>
+                <a href="/bangumi/">
+                  <i class="fa fa-film faa-vertical" aria-hidden="true"></i>
+                  番组
+                </a>
+              </li>
+            
+              <li>
+                <a href="/music/">
+                  <i class="fa fa-headphones" aria-hidden="true"></i>
+                  歌单
+                </a>
+              </li>
+            
+              <li>
+                <a href="/tags/图集/">
+                  <i class="fa fa-photo" aria-hidden="true"></i>
+                  图集
+                </a>
+              </li>
+            
+          </ul>
+        
+      </li>
+    
+      <li>
+        <a href="/comment/">
+          <span class="faa-parent animated-hover">
+            <i class="fa  fa-pencil-square-o faa-tada" aria-hidden="true"></i>
+            留言板
+          </span>
+        </a>
+        
+      </li>
+    
+      <li>
+        <a href="/links/">
+          <span class="faa-parent animated-hover">
+            <i class="fa  fa-link faa-shake" aria-hidden="true"></i>
+            友人帐
+          </span>
+        </a>
+        
+      </li>
+    
+      <li>
+        <a href="/donate/">
+          <span class="faa-parent animated-hover">
+            <i class="fa  fa-heart faa-pulse" aria-hidden="true"></i>
+            赞赏
+          </span>
+        </a>
+        
+      </li>
+    
+      <li>
+        <a href="/">
+          <span class="faa-parent animated-hover">
+            <i class="fa  fa-leaf faa-wrench" aria-hidden="true"></i>
+            关于
+          </span>
+        </a>
+        
+          <ul class="sub-menu">
+            
+              <li>
+                <a href="/about/">
+                  <i class="fa fa-meetup" aria-hidden="true"></i>
+                  我？
+                </a>
+              </li>
+            
+              <li>
+                <a href="/theme-sakura/">
+                  <i class="fa iconfont icon-sakura" aria-hidden="true"></i>
+                  主题
+                </a>
+              </li>
+            
+              <li>
+                <a href="/lab/">
+                  <i class="fa fa-cogs" aria-hidden="true"></i>
+                  Lab
+                </a>
+              </li>
+            
+          </ul>
+        
+      </li>
+    
+      <li>
+        <a href="/client/">
+          <span class="faa-parent animated-hover">
+            <i class="fa  fa-android faa-vertical" aria-hidden="true"></i>
+            客户端
+          </span>
+        </a>
+        
+      </li>
+    
+      <li>
+        <a href="/atom.xml">
+          <span class="faa-parent animated-hover">
+            <i class="fa  fa-rss faa-pulse" aria-hidden="true"></i>
+            RSS
+          </span>
+        </a>
+        
+      </li>
+    
+  </ul>
+  <p style="text-align: center; font-size: 13px; color: #b9b9b9;">&copy 2019 hexo-sakura</p>
+</div>
+<button onclick="topFunction()" class="mobile-cd-top" id="moblieGoTop" title="Go to top" style="display: none;"><i class="fa fa-chevron-up" aria-hidden="true"></i></button>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/aplayer/dist/APlayer.min.css">
+<script src="https://cdn.jsdelivr.net/npm/aplayer/dist/APlayer.min.js"></script>
+<!-- require MetingJS -->
+<script src="https://cdn.jsdelivr.net/npm/meting@2/dist/Meting.min.js"></script>
+<style>
+  .aplayer .aplayer-lrc {
+    height: 35px;
+  }
+  .aplayer .aplayer-lrc p{
+    font-size: 16px;
+    font-weight: 700;
+    line-height: 18px !important;
+  }
+  .aplayer .aplayer-lrc p.aplayer-lrc-current{
+    color: #FF1493;
+  }
+  .aplayer.aplayer-narrow .aplayer-body{
+    left: -66px !important;
+  }
+  .aplayer.aplayer-fixed .aplayer-lrc {
+    display: none;
+  }
+  .aplayer .aplayer-lrc.aplayer-lrc-hide {
+      display:none !important;
+  }
+  .aplayer.aplayer-fixed .lrc-show {
+    display: block;
+    background: rgba(255, 255, 255, 0.8);
+  }
+</style>
+<meting-js
+
+    id="2660651585"
+
+    server="netease"
+
+    type="playlist"
+
+    fixed="true"
+
+    autoplay="false"
+
+    loop="all"
+
+    order="random"
+
+    preload="auto"
+
+    volume="0.7"
+
+    mutex="true"
+
+</meting-js>
+<script>
+  $(function(){
+    $('body').on('click', '.aplayer', function(){
+      if($('.aplayer-button').hasClass('aplayer-play')) {
+        $('.aplayer-lrc').removeClass('lrc-show');
+      } else {
+        $('.aplayer-lrc').addClass('lrc-show');
+      }
+    })
+  });
+</script>
+</body>
+</html>

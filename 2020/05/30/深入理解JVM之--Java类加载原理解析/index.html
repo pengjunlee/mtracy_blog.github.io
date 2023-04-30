@@ -1,0 +1,1515 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head><meta name="generator" content="Hexo 3.9.0">
+  <meta charset="utf-8">
+  <meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0" name="viewport">
+  
+  <title itemprop="name">深入理解JVM系列之--Java类加载原理解析 | 李朋军的个人博客</title>
+  
+    <link rel="shortcut icon" href="/images/favicon.jpg">
+  
+  <meta http-equiv="x-dns-prefetch-control" content="on">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Noto+SerifMerriweather|Merriweather+Sans|Source+Code+Pro|Ubuntu:400,700|Noto+Serif+SC" media="all">
+  <link rel="dns-prefetch" href="//cdn.jsdelivr.net">
+  <link rel="stylesheet" id="saukra_css-css" href="/css/style.css" type="text/css" media="all">
+  <link rel="stylesheet" href="/css/lib.min.css" media="all">
+  <link rel="stylesheet" href="/css/font.css" media="all">
+  <link rel="stylesheet" href="/css/insight.css" media="all">
+  <link rel="stylesheet" href="/css/jquery.fancybox.min.css" media="all">
+  <link rel="stylesheet" href="/css/zoom.css" media="all">
+  <link rel="stylesheet" type="text/css" href="/css/sharejs.css">
+<!--   <link rel="stylesheet" id="saukra_css-css" href="https://2heng.xin/wp-content/cache/autoptimize/css/autoptimize_ad42a61f4c7d4bdd9f91afcff6b5dda5.css
+" type="text/css" media="all"> -->
+  <script>
+  /*Initial Variables*/
+  var mashiro_option = new Object();
+  var mashiro_global = new Object();
+  mashiro_option.NProgressON = true;
+  /* 
+   * 邮箱信息之类的东西可以填在这里，这些js变量基本都作用于sakura-app.js
+   * 这样的设置仅是为了方便在基于PHP开发的主题中设置js变量，既然移植到了Node上，我想或许可以精简这一逻辑吧
+   */
+  mashiro_option.email_domain = "";
+  mashiro_option.email_name = "";
+  mashiro_option.cookie_version_control = "";
+  mashiro_option.qzone_autocomplete = false;
+  mashiro_option.site_name = "李朋军";
+  mashiro_option.author_name = "朋军";
+  mashiro_option.site_url = "http://blog.mtracy.club/";
+  mashiro_option.v_appId = "k0QcRvFFw7AovKS8un6pys2S-gzGzoHsz";
+  mashiro_option.v_appKey = "Y5w42nyHhdKlYHT00svHuIya";
+  mashiro_option.mathjax = "0";
+  mashiro_option.qq_api_url = "https://api.mashiro.top/qqinfo/"; 
+  mashiro_option.qq_avatar_api_url = "https://api.mashiro.top/qqinfo/";
+
+  // mashiro_option.jsdelivr_css_src = "https://cdn.jsdelivr.net/gh/moezx/cdn@3.4.5/css/lib.min.css";
+  // mashiro_option.float_player_on = true;
+
+  /*End of Initial Variables*/
+  </script>
+  <script type="text/javascript">
+  var bg = "https://cdn.jsdelivr.net/gh/pengjunlee/picture-warehouse/img/(1).jpg.webp,https://cdn.jsdelivr.net/gh/pengjunlee/picture-warehouse/img/(2).jpg.webp,https://cdn.jsdelivr.net/gh/pengjunlee/picture-warehouse/img/(3).jpg.webp,https://cdn.jsdelivr.net/gh/pengjunlee/picture-warehouse/img/(4).jpg.webp,https://cdn.jsdelivr.net/gh/pengjunlee/picture-warehouse/img/(5).jpg.webp,https://cdn.jsdelivr.net/gh/pengjunlee/picture-warehouse/img/(6).jpg.webp,https://cdn.jsdelivr.net/gh/pengjunlee/picture-warehouse/img/(7).jpg.webp,https://cdn.jsdelivr.net/gh/pengjunlee/picture-warehouse/img/(8).jpg.webp".split(",");
+  var bgindex = Math.floor(Math.random()*bg.length);
+  if (!!window.ActiveXObject || "ActiveXObject" in window) { //is IE?
+    alert('朋友，IE浏览器未适配哦~');
+  }
+  </script>
+  <style type="text/css">
+  .hljs-ln{border-collapse:collapse}.hljs-ln td{padding:0}.hljs-ln-n:before{content:attr(data-line-number)}
+  </style>
+  <style type="text/css">.site-top .lower nav{display:block !important;}.author-profile i,.post-like a,.post-share .show-share,.sub-text,.we-info a,span.sitename,.post-more i:hover,#pagination a:hover,.post-content a:hover,.float-content i:hover{color:#FE9600}.feature i,.download,.navigator i:hover,.links ul li:before,.ar-time i,span.ar-circle,.object,.comment .comment-reply-link,.siren-checkbox-radio:checked + .siren-checkbox-radioInput:after{background:#FE9600}::-webkit-scrollbar-thumb{background:#FE9600}.download,.navigator i:hover,.link-title,.links ul li:hover,#pagination a:hover,.comment-respond input[type='submit']:hover{border-color:#FE9600}.entry-content a:hover,.site-info a:hover,.comment h4 a,#comments-navi a.prev,#comments-navi a.next,.comment h4 a:hover,.site-top ul li a:hover,.entry-title a:hover,#archives-temp h3,span.page-numbers.current,.sorry li a:hover,.site-title a:hover,i.iconfont.js-toggle-search.iconsearch:hover,.comment-respond input[type='submit']:hover{color:#FE9600}.comments .comments-main{display:block !important;}.comments .comments-hidden{display:none !important;}background-position:center center;background-attachment:inherit;}
+  </style>
+</head>
+</html>
+<body class="page-template page-template-user page-template-page-analytics page-template-userpage-analytics-php page page-id-1297 chinese-font serif isWebKit">
+  <div class="scrollbar" id="bar">
+  </div>
+  <a href="#" class="cd-top faa-float animated"></a>
+  <section id="main-container">
+    <div class="headertop filter-grid">
+  <div id="banner_wave_1"></div>
+  <div id="banner_wave_2"></div>
+  <figure id="centerbg" class="centerbg">
+    <div class="focusinfo no-select">
+      <div class="header-tou">
+        <a href="http://blog.mtracy.club/">
+          <img src="https://cdn.jsdelivr.net/gh/pengjunlee/picture-warehouse/img/avatar.jpg">
+        </a>
+      </div>
+      <div class="header-info">
+        <p>千帆退却，我向前；天涯尽头，是晴天!</p>
+        <div class="top-social_v2">
+          <li id="bg-pre">
+            <img class="flipx" src="https://cdn.jsdelivr.net/gh/honjun/cdn@1.6/img/other/next-b.svg">
+          </li>
+          
+            
+              
+                <li>
+                  <a href="http://github.com/honjun" target="_blank" class="social-github" title="github">
+                    <img src="https://cdn.jsdelivr.net/gh/pengjunlee/picture-warehouse/img/github.png">
+                  </a>
+                </li>
+              
+            
+              
+                <li>
+                  <a href="http://weibo.com/mashirozx?is_all=1" target="_blank" class="social-github" title="sina">
+                    <img src="https://cdn.jsdelivr.net/gh/pengjunlee/picture-warehouse/img/sina.png">
+                  </a>
+                </li>
+              
+            
+              
+                <li>
+                  <a href="http://weibo.com/mashirozx?is_all=1" target="_blank" class="social-github" title="wangyiyun">
+                    <img src="https://cdn.jsdelivr.net/gh/pengjunlee/picture-warehouse/img/wangyiyun.png">
+                  </a>
+                </li>
+              
+            
+              
+                <li>
+                  <a href="http://weibo.com/mashirozx?is_all=1" target="_blank" class="social-github" title="zhihu">
+                    <img src="https://cdn.jsdelivr.net/gh/pengjunlee/picture-warehouse/img/zhihu.png">
+                  </a>
+                </li>
+              
+            
+              
+                <li>
+                  <a href="http://weibo.com/mashirozx?is_all=1" target="_blank" class="social-github" title="email">
+                    <img src="https://cdn.jsdelivr.net/gh/pengjunlee/picture-warehouse/img/email.svg">
+                  </a>
+                </li>
+              
+            
+              
+                <li class="wechat">
+                  <a href="/#">
+                    <img src="https://cdn.jsdelivr.net/gh/pengjunlee/picture-warehouse/img/wechat.png">
+                  </a>
+                  <div class="wechatInner">
+                    <img src="https://cdn.jsdelivr.net/gh/pengjunlee/picture-warehouse/img/wechat.jpg">
+                  </div>
+                </li>
+              
+            
+              
+                <li class="wechat">
+                  <a href="/#">
+                    <img src="https://cdn.jsdelivr.net/gh/pengjunlee/picture-warehouse/img/wechat.png">
+                  </a>
+                  <div class="wechatInner">
+                    <img src="https://cdn.jsdelivr.net/gh/pengjunlee/picture-warehouse/img/wechat.jpg">
+                  </div>
+                </li>
+              
+            
+          
+          <li id="bg-next">
+            <img src="https://cdn.jsdelivr.net/gh/honjun/cdn@1.6/img/other/next-b.svg">
+          </li>
+        </div>
+      </div>
+    </div>
+  </figure>
+  <div id="video-container" style="">
+    <video style="object-fit: fill" id="bgvideo" class="video" video-name="" src="" width="auto" preload="auto">
+    </video>
+    <div id="video-btn" class="loadvideo videolive">
+    </div>
+    <div id="video-add">
+    </div>
+    <div class="video-stu">
+    </div>
+  </div>
+  <div class="headertop-down faa-float animated" onclick="headertop_down()">
+    <span>
+      <i class="fa fa-chevron-down" aria-hidden="true">
+      </i>
+    </span>
+  </div>
+</div>
+    <div id="page" class="site wrapper">
+      <header class="site-header no-select gizle sabit" role="banner">
+  <div class="site-top">
+    <div class="site-branding">
+      <span class="site-title">
+        <span class="logolink moe-mashiro">
+          <a href="/">
+            <span class="sakurasono">李</span>
+            <span class="shironeko">朋军</span>
+          </a>
+        </span>
+      </span>
+    </div>
+    <div class="searchbox search-form-submit">
+      <i class="iconfont js-toggle-search iconsearch icon-search">
+      </i>
+    </div>
+    <div id="show-nav" class="showNav mobile-fit">
+      <div class="line line1">
+      </div>
+      <div class="line line2">
+      </div>
+      <div class="line line3">
+      </div>
+    </div>
+    <div class="lower-cantiner">
+      <div class="lower">
+        <nav class="mobile-fit-control hide">
+          <ul id="menu-new" class="menu">
+            
+              <li>
+                <a href="/">
+                  <span class="faa-parent animated-hover">
+                    <i class="fa  fa-fort-awesome faa-shake" aria-hidden="true"></i>
+                    首页
+                  </span>
+                </a>
+                
+              </li>
+            
+              <li>
+                <a href="/archives">
+                  <span class="faa-parent animated-hover">
+                    <i class="fa  fa-archive faa-shake" aria-hidden="true"></i>
+                    归档
+                  </span>
+                </a>
+                
+                  <ul class="sub-menu">
+                    
+                      <li>
+                        <a href="/categories/编程/">
+                          <i class="fa fa-code" aria-hidden="true"></i>
+                          编程
+                        </a>
+                      </li>
+                    
+                      <li>
+                        <a href="/categories/技术/">
+                          <i class="fa fa-cogs" aria-hidden="true"></i>
+                          技术
+                        </a>
+                      </li>
+                    
+                      <li>
+                        <a href="/categories/生活/">
+                          <i class="fa fa-file-text-o" aria-hidden="true"></i>
+                          生活
+                        </a>
+                      </li>
+                    
+                      <li>
+                        <a href="/categories/资源/">
+                          <i class="fa fa-cloud-download" aria-hidden="true"></i>
+                          资源
+                        </a>
+                      </li>
+                    
+                      <li>
+                        <a href="/categories/随想/">
+                          <i class="fa fa-commenting-o" aria-hidden="true"></i>
+                          随想
+                        </a>
+                      </li>
+                    
+                      <li>
+                        <a href="/categories/转载/">
+                          <i class="fa fa-book" aria-hidden="true"></i>
+                          转载
+                        </a>
+                      </li>
+                    
+                  </ul>
+                
+              </li>
+            
+              <li>
+                <a href="javascript:;">
+                  <span class="faa-parent animated-hover">
+                    <i class="fa  fa-list-ul faa-vertical" aria-hidden="true"></i>
+                    清单
+                  </span>
+                </a>
+                
+                  <ul class="sub-menu">
+                    
+                      <li>
+                        <a href="/tags/悦读/">
+                          <i class="fa fa-th-list faa-bounce" aria-hidden="true"></i>
+                          书单
+                        </a>
+                      </li>
+                    
+                      <li>
+                        <a href="/bangumi/">
+                          <i class="fa fa-film faa-vertical" aria-hidden="true"></i>
+                          番组
+                        </a>
+                      </li>
+                    
+                      <li>
+                        <a href="/music/">
+                          <i class="fa fa-headphones" aria-hidden="true"></i>
+                          歌单
+                        </a>
+                      </li>
+                    
+                      <li>
+                        <a href="/tags/图集/">
+                          <i class="fa fa-photo" aria-hidden="true"></i>
+                          图集
+                        </a>
+                      </li>
+                    
+                  </ul>
+                
+              </li>
+            
+              <li>
+                <a href="/comment/">
+                  <span class="faa-parent animated-hover">
+                    <i class="fa  fa-pencil-square-o faa-tada" aria-hidden="true"></i>
+                    留言板
+                  </span>
+                </a>
+                
+              </li>
+            
+              <li>
+                <a href="/links/">
+                  <span class="faa-parent animated-hover">
+                    <i class="fa  fa-link faa-shake" aria-hidden="true"></i>
+                    友人帐
+                  </span>
+                </a>
+                
+              </li>
+            
+              <li>
+                <a href="/donate/">
+                  <span class="faa-parent animated-hover">
+                    <i class="fa  fa-heart faa-pulse" aria-hidden="true"></i>
+                    赞赏
+                  </span>
+                </a>
+                
+              </li>
+            
+              <li>
+                <a href="/">
+                  <span class="faa-parent animated-hover">
+                    <i class="fa  fa-leaf faa-wrench" aria-hidden="true"></i>
+                    关于
+                  </span>
+                </a>
+                
+                  <ul class="sub-menu">
+                    
+                      <li>
+                        <a href="/about/">
+                          <i class="fa fa-meetup" aria-hidden="true"></i>
+                          我？
+                        </a>
+                      </li>
+                    
+                      <li>
+                        <a href="/theme-sakura/">
+                          <i class="fa iconfont icon-sakura" aria-hidden="true"></i>
+                          主题
+                        </a>
+                      </li>
+                    
+                      <li>
+                        <a href="/lab/">
+                          <i class="fa fa-cogs" aria-hidden="true"></i>
+                          Lab
+                        </a>
+                      </li>
+                    
+                  </ul>
+                
+              </li>
+            
+              <li>
+                <a href="/client/">
+                  <span class="faa-parent animated-hover">
+                    <i class="fa  fa-android faa-vertical" aria-hidden="true"></i>
+                    客户端
+                  </span>
+                </a>
+                
+              </li>
+            
+              <li>
+                <a href="/atom.xml">
+                  <span class="faa-parent animated-hover">
+                    <i class="fa  fa-rss faa-pulse" aria-hidden="true"></i>
+                    RSS
+                  </span>
+                </a>
+                
+              </li>
+            
+          </ul>
+        </nav>
+      </div>
+    </div>
+  </div>
+</header>
+
+      <link rel="stylesheet" type="text/css" href="/css/sharejs.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/tocbot/4.4.2/tocbot.css">
+<div class="pattern-center-blank"></div>
+
+  <div class="pattern-center single-center">
+    <!-- 有配图默认渲染第一张 -->
+    <div class="pattern-attachment-img lazyload" style="background-image: url(https://cdn.jsdelivr.net/gh/pengjunlee/picture-warehouse/java-jvm/jvm10.png);" src="https://cdn.jsdelivr.net/gh/pengjunlee/picture-warehouse/img/orange.progress-bar-stripe-loader.svg" data-src="https://cdn.jsdelivr.net/gh/pengjunlee/picture-warehouse/java-jvm/jvm10.png">
+    </div>
+    <header class="pattern-header single-header">
+      <h1 class="entry-title">
+      深入理解JVM系列之--Java类加载原理解析</h1>
+      <p class="entry-census">
+        <span>
+          <a href="pengjunlee">
+            <img src="https://cdn.jsdelivr.net/gh/pengjunlee/picture-warehouse/img/logo.jpg">
+          </a>
+        </span>
+        <span>
+          <a href="pengjunlee">李朋军</a>
+        </span>
+        <span class="bull">
+        ·</span>
+        2020-5-30<span class="bull">
+        ·</span>
+      <span id="busuanzi_value_page_pv"></span>次阅读</p>
+    </header>
+  </div>
+
+<div id="content" class="site-content">
+  <div id="primary" class="content-area">
+    <main id="main" class="site-main" role="main">
+      <article id="post-1" class="post-1 post type-post status-publish format-standard has-post-thumbnail hentry category-uncategorized">
+        <div class="toc"></div>
+        <!--<div class="toc-entry-content"><!-- 套嵌目录使用（主要为了支援评论）-->
+        
+        <div class="entry-content">
+          <blockquote>
+<p> 转载自：《深入理解Java类加载器(1)：Java类加载原理解析》</p>
+</blockquote>
+<h1 id="一、前言"><a href="#一、前言" class="headerlink" title="一、前言"></a>一、前言</h1><p>每个开发人员对<font color="red">Java.lang.ClassNotFoundExcetpion</font>这个异常肯定都不陌生，这背后就涉及到了java技术体系中的类加载。Java的类加载机制是技术体系中比较核心的部分，虽然和大部分开发人员直接打交道不多，但是对其背后的机理有一定理解有助于排查程序中出现的类加载失败等技术问题，对理解java虚拟机的连接模型和java语言的动态性都有很大帮助。</p>
+<h1 id="二、Java类加载器"><a href="#二、Java类加载器" class="headerlink" title="二、Java类加载器"></a>二、Java类加载器</h1><h2 id="2-1JVM三种预定义类型类加载器"><a href="#2-1JVM三种预定义类型类加载器" class="headerlink" title="2.1JVM三种预定义类型类加载器"></a>2.1JVM三种预定义类型类加载器</h2><p>我们首先看一下JVM预定义的三种类型类加载器，当一个 JVM启动的时候，Java缺省开始使用如下三种类型类装入器：</p>
+<ul>
+<li><strong>启动（Bootstrap）类加载器</strong>：引导类装入器是用本地代码实现的类装入器，它负责将 <code>&lt;Java_Runtime_Home&gt;/lib</code>下面的核心类库或<code>-Xbootclasspath</code>选项指定的jar包加载到内存中。由于引导类加载器涉及到虚拟机本地实现细节，开发者无法直接获取到启动类加载器的引用，所以不允许直接通过引用进行操作。</li>
+<li><strong>扩展（Extension）类加载器</strong>：扩展类加载器是由Sun的ExtClassLoader（sun.misc.Launcher$ExtClassLoader）实现的。它负责将<code>&lt; Java_Runtime_Home &gt;/lib/ext</code>或者由系统变量<code>-Djava.ext.dir</code>指定位置中的类库加载到内存中。开发者可以直接使用标准扩展类加载器。</li>
+<li><strong>系统（System）类加载器</strong>：系统类加载器是由 Sun的 AppClassLoader（sun.misc.Launcher$AppClassLoader）实现的。它负责将系统类路径<code>java -classpath</code>或<code>-Djava.class.path</code>变量所指的目录下的类库加载到内存中。开发者可以直接使用系统类加载器。</li>
+</ul>
+<p>除了以上列举的三种类加载器，还有一种比较特殊的类型就是线程上下文类加载器，这个将在后面单独介绍。</p>
+<h2 id="2-2-类加载双亲委派机制"><a href="#2-2-类加载双亲委派机制" class="headerlink" title="2.2 类加载双亲委派机制"></a>2.2 类加载双亲委派机制</h2><p>　　在这里，需要着重说明的是，JVM在加载类时默认采用的是双亲委派机制。通俗的讲，就是某个特定的类加载器在接到加载类的请求时，首先将加载任务委托给父类加载器，依次递归，如果父类加载器可以完成类加载任务，就成功返回；只有父类加载器无法完成此加载任务时，才自己去加载。关于虚拟机默认的双亲委派机制，我们可以从系统类加载器和扩展类加载器为例作简单分析。</p>
+<p><div align="center"><img src="https://cdn.jsdelivr.net/gh/pengjunlee/picture-warehouse/java-jvm/105.png" alt="标准扩展类加载器继承层次图" title="标准扩展类加载器继承层次图"></div></p>
+<p><div align="center">图一 标准扩展类加载器继承层次图</div></p>
+<p><div align="center"><img src="https://cdn.jsdelivr.net/gh/pengjunlee/picture-warehouse/java-jvm/100.png" alt="系统类加载器继承层次图" title="系统类加载器继承层次图"></div></p>
+<p><div align="center">图二 系统类加载器继承层次图</div></p>
+<p><div align="left"><br>通过图一和图二我们可以看出，类加载器均是继承自<code>java.lang.ClassLoader</code>抽象类。我们下面我们就看简要介绍一下<code>java.lang.ClassLoader</code>中几个最重要的方法：</div></p>
+<pre><code>//加载指定名称（包括包名）的二进制类型，供用户调用的接口  
+public Class&lt;?&gt; loadClass(String name) throws ClassNotFoundException{ … }  
+
+//加载指定名称（包括包名）的二进制类型，同时指定是否解析（但是这里的resolve参数不一定真正能达到解析的效果），供继承用  
+protected synchronized Class&lt;?&gt; loadClass(String name, boolean resolve) throws ClassNotFoundException{ … }  
+
+//findClass方法一般被loadClass方法调用去加载指定名称类，供继承用  
+protected Class&lt;?&gt; findClass(String name) throws ClassNotFoundException { … }  
+
+//定义类型，一般在findClass方法中读取到对应字节码后调用，可以看出不可继承  
+//（说明：JVM已经实现了对应的具体功能，解析对应的字节码，产生对应的内部数据结构放置到方法区，所以无需覆写，直接调用就可以了）  
+protected final Class&lt;?&gt; defineClass(String name, byte[] b, int off, int len) throws ClassFormatError{ … }  
+</code></pre><p>通过进一步分析标准扩展类加载器（<strong>sun.misc.Launcher$ExtClassLoader</strong>）和系统类加载器（<strong>sun.misc.Launcher$AppClassLoader</strong>）的代码以及其公共父类（<strong>java.net.URLClassLoader</strong>和<strong>java.security.SecureClassLoader</strong>）的代码可以看出，都没有覆写<strong>java.lang.ClassLoader</strong>中默认的加载委派规则—<strong>loadClass（…）</strong>方法。既然这样，我们就可以通过分析<strong>java.lang.ClassLoader</strong>中的<strong>loadClass（String name）</strong>方法的代码就可以分析出虚拟机默认采用的双亲委派机制到底是什么模样：</p>
+<pre><code>public Class&lt;?&gt; loadClass(String name) throws ClassNotFoundException {  
+    return loadClass(name, false);  
+}  
+
+protected synchronized Class&lt;?&gt; loadClass(String name, boolean resolve)  
+        throws ClassNotFoundException {  
+
+    // 首先判断该类型是否已经被加载  
+    Class c = findLoadedClass(name);  
+    if (c == null) {  
+        //如果没有被加载，就委托给父类加载或者委派给启动类加载器加载  
+        try {  
+            if (parent != null) {  
+                //如果存在父类加载器，就委派给父类加载器加载  
+                c = parent.loadClass(name, false);  
+            } else {  
+                //如果不存在父类加载器，就检查是否是由启动类加载器加载的类，  
+                //通过调用本地方法native findBootstrapClass0(String name)  
+                c = findBootstrapClass0(name);  
+            }  
+        } catch (ClassNotFoundException e) {  
+            // 如果父类加载器和启动类加载器都不能完成加载任务，才调用自身的加载功能  
+            c = findClass(name);  
+        }  
+    }  
+    if (resolve) {  
+        resolveClass(c);  
+    }  
+    return c;  
+}  
+</code></pre><p>通过上面的代码分析，我们可以对JVM采用的双亲委派类加载机制有了更感性的认识，下面我们就接着分析一下启动类加载器、标准扩展类加载器和系统类加载器三者之间的关系。可能大家已经从各种资料上面看到了如下类似的一幅图片：</p>
+<p><div align="center"><img src="https://cdn.jsdelivr.net/gh/pengjunlee/picture-warehouse/java-jvm/101.png" alt="图三 类加载器默认委派关系图" title="图三 类加载器默认委派关系图"></div></p>
+<p><div align="center">图三 类加载器默认委派关系图</div></p>
+<div align="left">
+
+<p>上面图片给人的直观印象是系统类加载器的父类加载器是标准扩展类加载器，标准扩展类加载器的父类加载器是启动类加载器，下面我们就用代码具体测试一下：</p>
+<pre><code>public class LoaderTest {  
+
+    public static void main(String[] args) {  
+        try {  
+            System.out.println(ClassLoader.getSystemClassLoader());  
+            System.out.println(ClassLoader.getSystemClassLoader().getParent());  
+            System.out.println(ClassLoader.getSystemClassLoader().getParent().getParent());  
+        } catch (Exception e) {  
+            e.printStackTrace();  
+        }  
+    }  
+}  
+</code></pre><p>说明：通过<strong>java.lang.ClassLoader.getSystemClassLoader()</strong>可以直接获取到系统类加载器。</p>
+<p>代码输出如下：</p>
+<p><code>sun.misc.Launcher$AppClassLoader@6d06d69c</code><br><code>sun.misc.Launcher$ExtClassLoader@70dea4e</code><br><code>null</code>   </p>
+<p>通过以上的代码输出，我们可以判定系统类加载器的父加载器是标准扩展类加载器，但是我们试图获取标准扩展类加载器的父类加载器时确得到了null，就是说标准扩展类加载器本身强制设定父类加载器为null。我们还是借助于代码分析一下。</p>
+<p>我们首先看一下java.lang.ClassLoader抽象类中默认实现的两个构造函数：</p>
+<pre><code>protected ClassLoader() {  
+    SecurityManager security = System.getSecurityManager();  
+    if (security != null) {  
+        security.checkCreateClassLoader();  
+    }  
+    //默认将父类加载器设置为系统类加载器，getSystemClassLoader()获取系统类加载器  
+    this.parent = getSystemClassLoader();  
+    initialized = true;  
+}  
+
+protected ClassLoader(ClassLoader parent) {  
+    SecurityManager security = System.getSecurityManager();  
+    if (security != null) {  
+        security.checkCreateClassLoader();  
+    }  
+    //强制设置父类加载器  
+    this.parent = parent;  
+    initialized = true;  
+}  
+</code></pre><p>我们再看一下ClassLoader抽象类中parent成员的声明：</p>
+<pre><code>// The parent class loader for delegation  
+private ClassLoader parent;  
+</code></pre><p>声明为私有变量的同时并没有对外提供可供派生类访问的public或者protected设置器接口（对应的setter方法），结合前面的测试代码的输出，我们可以推断出：</p>
+<ul>
+<li>系统类加载器（AppClassLoader）调用ClassLoader(ClassLoader parent)构造函数将父类加载器设置为标准扩展类加载器(ExtClassLoader)。（因为如果不强制设置，默认会通过调用getSystemClassLoader()方法获取并设置成系统类加载器，这显然和测试输出结果不符。）</li>
+<li>扩展类加载器（ExtClassLoader）调用ClassLoader(ClassLoader parent)构造函数将父类加载器设置为null。（因为如果不强制设置，默认会通过调用getSystemClassLoader()方法获取并设置成系统类加载器，这显然和测试输出结果不符。）</li>
+</ul>
+<p>　　现在我们可能会有这样的疑问：扩展类加载器（ExtClassLoader）的父类加载器被强制设置为null了，那么扩展类加载器为什么还能将加载任务委派给启动类加载器呢？</p>
+<p><div align="center"><img src="https://cdn.jsdelivr.net/gh/pengjunlee/picture-warehouse/java-jvm/102.png" alt="图四 标准扩展类加载器和系统类加载器成员大纲视图" title="图四 标准扩展类加载器和系统类加载器成员大纲视图"></div></p>
+<p><div align="center">图四 标准扩展类加载器和系统类加载器成员大纲视图</div></p>
+<p><div align="center"><img src="https://cdn.jsdelivr.net/gh/pengjunlee/picture-warehouse/java-jvm/103.png" alt="图五 扩展类加载器和系统类加载器公共父类成员大纲视图" title="图五 扩展类加载器和系统类加载器公共父类成员大纲视图"></div></p>
+<p><div align="center">图五 扩展类加载器和系统类加载器公共父类成员大纲视图</div></p>
+<p><div align="left">　</div></p>
+<p>通过图四和图五可以看出，标准扩展类加载器和系统类加载器及其父类（<strong>java.NET.URLClassLoader</strong>和<strong>java.security.SecureClassLoader</strong>）都没有覆写<strong>java.lang.ClassLoader</strong>中默认的加载委派规则—<strong>loadClass（…）</strong>方法。有关<strong>java.lang.ClassLoader</strong>中默认的加载委派规则前面已经分析过，如果父加载器为null，则会调用本地方法进行启动类加载尝试。所以，图三中，启动类加载器、标准扩展类加载器和系统类加载器之间的委派关系事实上是仍就成立的。（在后面的用户自定义类加载器部分，还会做更深入的分析）。</p>
+<h2 id="2-3-类加载双亲委派示例"><a href="#2-3-类加载双亲委派示例" class="headerlink" title="2.3 类加载双亲委派示例"></a>2.3 类加载双亲委派示例</h2><p>以上已经简要介绍了虚拟机默认使用的启动类加载器、标准扩展类加载器和系统类加载器，并以三者为例结合JDK代码对JVM默认使用的双亲委派类加载机制做了分析。下面我们就来看一个综合的例子。首先在IDE中建立一个简单的java应用工程，然后写一个简单的JavaBean如下：</p>
+<pre><code>package classloader.test.bean;  
+
+public class TestBean {  
+
+    public TestBean() { }  
+}  
+</code></pre><p>在现有当前工程中另外建立一测试类（ClassLoaderTest.java）内容如下：</p>
+<p><strong>测试一：</strong></p>
+<pre><code>package classloader.test.bean;  
+
+public class ClassLoaderTest {  
+
+    public static void main(String[] args) {  
+        try {  
+            //查看当前系统类路径中包含的路径条目  
+            System.out.println(System.getProperty(&quot;java.class.path&quot;));  
+            //调用加载当前类的类加载器（这里即为系统类加载器）加载TestBean  
+            Class typeLoaded = Class.forName(&quot;classloader.test.bean.TestBean&quot;);  
+            //查看被加载的TestBean类型是被那个类加载器加载的  
+            System.out.println(typeLoaded.getClassLoader());  
+        } catch (Exception e) {  
+            e.printStackTrace();  
+        }  
+    }  
+}  
+</code></pre><p>对应的输出如下：</p>
+<p><code>C:\Users\JackZhou\Documents\NetBeansProjects\ClassLoaderTest\build\classes</code><br><code>sun.misc.Launcher$AppClassLoader@73d16e93</code>   </p>
+<p><strong> 说明：当前类路径默认的含有的一个条目就是工程的输出目录。</strong></p>
+<p><strong>测试二：</strong></p>
+<p>将当前工程输出目录下的TestBean.class打包进test.jar剪贴到&lt;Java_Runtime_Home&gt;/lib/ext目录下（现在工程输出目录下和JRE扩展目录下都有待加载类型的class文件）。再运行测试一测试代码，结果如下：</p>
+<p><code>C:\Users\JackZhou\Documents\NetBeansProjects\ClassLoaderTest\build\classes</code><br><code>sun.misc.Launcher$ExtClassLoader@15db9742</code>  </p>
+<p>对比测试一和测试二，我们明显可以验证前面说的双亲委派机制，系统类加载器在接到加载classloader.test.bean.TestBean类型的请求时，首先将请求委派给父类加载器（标准扩展类加载器），标准扩展类加载器抢先完成了加载请求。</p>
+<p><strong>测试三：</strong></p>
+<p>将test.jar拷贝一份到&lt;Java_Runtime_Home&gt;/lib下，运行测试代码，输出如下：</p>
+<p><code>C:\Users\JackZhou\Documents\NetBeansProjects\ClassLoaderTest\build\classes</code><br><code>sun.misc.Launcher$ExtClassLoader@15db9742</code>  </p>
+<p>测试三和测试二输出结果一致。那就是说，放置到·&lt;Java_Runtime_Home&gt;/lib·目录下的·TestBean·对应的class字节码并没有被加载，这其实和前面讲的双亲委派机制并不矛盾。虚拟机出于安全等因素考虑，不会加载·&lt;Java_Runtime_Home&gt;/lib·存在的陌生类，开发者通过将要加载的非JDK自身的类放置到此目录下期待启动类加载器加载是不可能的。做个进一步验证，删除·&lt;Java_Runtime_Home&gt;/lib/ext·目录下和工程输出目录下的TestBean对应的class文件，然后再运行测试代码，则将会有·ClassNotFoundException·异常抛出。有关这个问题，大家可以在·java.lang.ClassLoader·中的·loadClass(String name, boolean resolve)·方法中设置相应断点运行测试三进行调试，会发现·findBootstrapClass0()·会抛出异常，然后在下面的findClass方法中被加载，当前运行的类加载器正是扩展类加载器（·sun.misc.Launcher$ExtClassLoader·），这一点可以通过JDT中变量视图查看验证。</p>
+<h1 id="三、java程序动态扩展方式"><a href="#三、java程序动态扩展方式" class="headerlink" title="三、java程序动态扩展方式"></a>三、java程序动态扩展方式</h1><p>Java的连接模型允许用户运行时扩展引用程序，既可以通过当前虚拟机中预定义的加载器加载编译时已知的类或者接口，又允许用户自行定义类装载器，在运行时动态扩展用户的程序。通过用户自定义的类装载器，你的程序可以装载在编译时并不知道或者尚未存在的类或者接口，并动态连接它们并进行有选择的解析。</p>
+<p>运行时动态扩展java应用程序有如下两个途径：</p>
+<h2 id="3-1-调用java-lang-Class-forName-…-加载类"><a href="#3-1-调用java-lang-Class-forName-…-加载类" class="headerlink" title="3.1 调用java.lang.Class.forName(…)加载类"></a>3.1 调用java.lang.Class.forName(…)加载类</h2><p>这个方法其实在前面已经讨论过，在后面的问题2解答中说明了该方法调用会触发哪个类加载器开始加载任务。这里需要说明的是多参数版本的forName(…)方法：</p>
+<pre><code>public static Class&lt;?&gt; forName(String name, boolean initialize, ClassLoader loader) throws ClassNotFoundException  
+</code></pre><p>这里的initialize参数是很重要的。它表示在加载同时是否完成初始化的工作（说明：单参数版本的forName方法默认是完成初始化的）。有些场景下需要将initialize设置为true来强制加载同时完成初始化。例如典型的就是利用DriverManager进行JDBC驱动程序类注册的问题。因为每一个JDBC驱动程序类的静态初始化方法都用DriverManager注册驱动程序，这样才能被应用程序使用。这就要求驱动程序类必须被初始化，而不单单被加载。Class.forName的一个很常见的用法就是在加载数据库驱动的时候。如 Class.forName(“org.apache.derby.jdbc.EmbeddedDriver”).newInstance()用来加载 Apache Derby 数据库的驱动。</p>
+<h2 id="3-2-用户自定义类加载器"><a href="#3-2-用户自定义类加载器" class="headerlink" title="3.2 用户自定义类加载器"></a>3.2 用户自定义类加载器</h2><p>通过前面的分析，我们可以看出，除了和本地实现密切相关的启动类加载器之外，包括标准扩展类加载器和系统类加载器在内的所有其他类加载器我们都可以当做自定义类加载器来对待，唯一区别是是否被虚拟机默认使用。前面的内容中已经对java.lang.ClassLoader抽象类中的几个重要的方法做了介绍，这里就简要叙述一下一般用户自定义类加载器的工作流程吧（可以结合后面问题解答一起看）：</p>
+<ul>
+<li>首先检查请求的类型是否已经被这个类装载器装载到命名空间中了，如果已经装载，直接返回；否则转入步骤2；</li>
+<li>委派类加载请求给父类加载器（更准确的说应该是双亲类加载器，真实虚拟机中各种类加载器最终会呈现树状结构），如果父类加载器能够完成，则返回父类加载器加载的Class实例；否则转入步骤3；</li>
+<li>调用本类加载器的findClass（…）方法，试图获取对应的字节码，如果获取的到，则调用defineClass（…）导入类型到方法区；如果获取不到对应的字节码或者其他原因失败，返回异常给loadClass（…）， loadClass（…）转而抛异常，终止加载过程（注意：这里的异常种类不止一种）。</li>
+</ul>
+<p>　　说明：这里说的自定义类加载器是指JDK 1.2以后版本的写法，即不覆写改变java.lang.loadClass(…)已有委派逻辑情况下。</p>
+<p>　　整个加载类的过程如下图：</p>
+<p><div align="center"><img src="https://cdn.jsdelivr.net/gh/pengjunlee/picture-warehouse/java-jvm/104.png" alt="图六 自定义类加载器加载类的过程" title="图六 自定义类加载器加载类的过程"></div></p>
+<p><div align="center">图六 自定义类加载器加载类的过程</div></p>
+<p><div align="left">　
+　</div></p>
+<h1 id="四、常见问题分析"><a href="#四、常见问题分析" class="headerlink" title="四、常见问题分析"></a>四、常见问题分析</h1><p><strong>4.1 由不同的类加载器加载的指定类还是相同的类型吗？</strong></p>
+<p>在Java中，一个类用其完全匹配类名(fully qualified class name)作为标识，这里指的完全匹配类名包括包名和类名。但在JVM中一个类用其全名和一个加载类ClassLoader的实例作为唯一标识，不同类加载器加载的类将被置于不同的命名空间。我们可以用两个自定义类加载器去加载某自定义类型（注意不要将自定义类型的字节码放置到系统路径或者扩展路径中，否则会被系统类加载器或扩展类加载器抢先加载），然后用获取到的两个Class实例进行java.lang.Object.equals（…）判断，将会得到不相等的结果。这个大家可以写两个自定义的类加载器去加载相同的自定义类型，然后做个判断；同时，可以测试加载java.*类型，然后再对比测试一下测试结果。</p>
+<p><strong>4.2 在代码中直接调用Class.forName(String name)方法，到底会触发那个类加载器进行类加载行为？</strong></p>
+<p>Class.forName(String name)默认会使用调用类的类加载器来进行类加载。我们直接来分析一下对应的jdk的代码：</p>
+<pre><code>//java.lang.Class.java  
+publicstatic Class&lt;?&gt; forName(String className) throws ClassNotFoundException {  
+    return forName0(className, true, ClassLoader.getCallerClassLoader());  
+}  
+
+//java.lang.ClassLoader.java  
+// Returns the invoker&#39;s class loader, or null if none.  
+static ClassLoader getCallerClassLoader() {  
+    // 获取调用类（caller）的类型  
+    Class caller = Reflection.getCallerClass(3);  
+    // This can be null if the VM is requesting it  
+    if (caller == null) {  
+        return null;  
+    }  
+    // 调用java.lang.Class中本地方法获取加载该调用类（caller）的ClassLoader  
+    return caller.getClassLoader0();  
+}  
+
+//java.lang.Class.java  
+//虚拟机本地实现，获取当前类的类加载器，前面介绍的Class的getClassLoader()也使用此方法  
+native ClassLoader getClassLoader0();  
+</code></pre><p><strong>4.3 在编写自定义类加载器时，如果没有设定父加载器，那么父加载器是谁？</strong></p>
+<p>前面讲过，在不指定父类加载器的情况下，默认采用系统类加载器。可能有人觉得不明白，现在我们来看一下JDK对应的代码实现。众所周知，我们编写自定义的类加载器直接或者间接继承自java.lang.ClassLoader抽象类，对应的无参默认构造函数实现如下：</p>
+<pre><code>//摘自java.lang.ClassLoader.java  
+protected ClassLoader() {  
+    SecurityManager security = System.getSecurityManager();  
+    if (security != null) {  
+        security.checkCreateClassLoader();  
+    }  
+    this.parent = getSystemClassLoader();  
+    initialized = true;  
+}  
+</code></pre><p>我们再来看一下对应的getSystemClassLoader()方法的实现：</p>
+<pre><code>private static synchronized void initSystemClassLoader() {  
+    //...  
+    sun.misc.Launcher l = sun.misc.Launcher.getLauncher();  
+    scl = l.getClassLoader();  
+    //...  
+}  
+</code></pre><p>我们可以写简单的测试代码来测试一下：</p>
+<pre><code>System.out.println(sun.misc.Launcher.getLauncher().getClassLoader());  
+</code></pre><p>本机对应输出如下：<br><code>sun.misc.Launcher$AppClassLoader@73d16e93</code></p>
+<p>所以，我们现在可以相信当自定义类加载器没有指定父类加载器的情况下，默认的父类加载器即为系统类加载器。同时，我们可以得出如下结论：即使用户自定义类加载器不指定父类加载器，那么，同样可以加载如下三个地方的类：</p>
+<ul>
+<li><code>&lt;Java_Runtime_Home&gt;/lib</code>下的类；</li>
+<li><code>&lt; Java_Runtime_Home &gt;/lib/ext</code>下或者由系统变量<code>java.ext.dir</code>指定位置中的类；</li>
+<li>当前工程类路径下或者由系统变量<code>java.class.path</code>指定位置中的类。</li>
+</ul>
+<p><strong>4.4 在编写自定义类加载器时，如果将父类加载器强制设置为null，那么会有什么影响？如果自定义的类加载器不能加载指定类，就肯定会加载失败吗？</strong></p>
+<p>JVM规范中规定如果用户自定义的类加载器将父类加载器强制设置为null，那么会自动将启动类加载器设置为当前用户自定义类加载器的父类加载器（这个问题前面已经分析过了）。同时，我们可以得出如下结论：<br>即使用户自定义类加载器不指定父类加载器，那么，同样可以加载到<code>&lt;Java_Runtime_Home&gt;/lib</code>下的类，但此时就不能够加载<code>&lt;Java_Runtime_Home&gt;/lib/ext</code>目录下的类了。</p>
+<p>说明：问题3和问题4的推断结论是基于用户自定义的类加载器本身延续了<code>java.lang.ClassLoader.loadClass（…）</code>默认委派逻辑，如果用户对这一默认委派逻辑进行了改变，以上推断结论就不一定成立了，详见问题5。</p>
+<p><strong>4.5 编写自定义类加载器时，一般有哪些注意点？</strong></p>
+<ul>
+<li>一般尽量不要覆写已有的loadClass(…)方法中的委派逻辑</li>
+</ul>
+<p>一般在JDK 1.2之前的版本才这样做，而且事实证明，这样做极有可能引起系统默认的类加载器不能正常工作。在JVM规范和JDK文档中（1.2或者以后版本中），都没有建议用户覆写loadClass(…)方法，相比而言，明确提示开发者在开发自定义的类加载器时覆写findClass(…)逻辑。举一个例子来验证该问题：</p>
+<pre><code>//用户自定义类加载器WrongClassLoader.Java（覆写loadClass逻辑）  
+public class WrongClassLoader extends ClassLoader {  
+
+    public Class&lt;?&gt; loadClass(String name) throws ClassNotFoundException {  
+        return this.findClass(name);  
+    }  
+
+    protected Class&lt;?&gt; findClass(String name) throws ClassNotFoundException {  
+        // 假设此处只是到工程以外的特定目录D:\library下去加载类  
+        // 具体实现代码省略  
+    }  
+}  
+</code></pre><p>通过前面的分析我们已经知道，这个自定义类加载器WrongClassLoader的默认类加载器是系统类加载器，但是现在问题4种的结论就不成立了。大家可以简单测试一下，现在<code>&lt;Java_Runtime_Home&gt;/lib</code>、<code>&lt; Java_Runtime_Home &gt;/lib/ext</code>和工程类路径上的类都加载不上了。</p>
+<pre><code>//问题5测试代码一  
+public class WrongClassLoaderTest {  
+
+    publicstaticvoid main(String[] args) {  
+        try {  
+            WrongClassLoader loader = new WrongClassLoader();  
+            Class classLoaded = loader.loadClass(&quot;beans.Account&quot;);  
+            System.out.println(classLoaded.getName());  
+            System.out.println(classLoaded.getClassLoader());  
+        } catch (Exception e) {  
+            e.printStackTrace();  
+        }  
+    }  
+}  
+</code></pre><p>这里<code>D:&quot;classes&quot;beans&quot;Account.class</code>是物理存在的。输出结果：</p>
+<pre><code>java.io.FileNotFoundException: D:&quot;classes&quot;java&quot;lang&quot;Object.class (系统找不到指定的路径。)  
+    at java.io.FileInputStream.open(Native Method)  
+    at java.io.FileInputStream.&lt;init&gt;(FileInputStream.java:106)  
+    at WrongClassLoader.findClass(WrongClassLoader.java:40)  
+    at WrongClassLoader.loadClass(WrongClassLoader.java:29)  
+    at java.lang.ClassLoader.loadClassInternal(ClassLoader.java:319)  
+    at java.lang.ClassLoader.defineClass1(Native Method)  
+    at java.lang.ClassLoader.defineClass(ClassLoader.java:620)  
+    at java.lang.ClassLoader.defineClass(ClassLoader.java:400)  
+    at WrongClassLoader.findClass(WrongClassLoader.java:43)  
+    at WrongClassLoader.loadClass(WrongClassLoader.java:29)  
+    at WrongClassLoaderTest.main(WrongClassLoaderTest.java:27)  
+Exception in thread &quot;main&quot; java.lang.NoClassDefFoundError: java/lang/Object  
+    at java.lang.ClassLoader.defineClass1(Native Method)  
+    at java.lang.ClassLoader.defineClass(ClassLoader.java:620)  
+    at java.lang.ClassLoader.defineClass(ClassLoader.java:400)  
+    at WrongClassLoader.findClass(WrongClassLoader.java:43)  
+    at WrongClassLoader.loadClass(WrongClassLoader.java:29)  
+    at WrongClassLoaderTest.main(WrongClassLoaderTest.java:27)  
+</code></pre><p>这说明，连要加载的类型的超类型java.lang.Object都加载不到了。这里列举的由于覆写loadClass()引起的逻辑错误明显是比较简单的，实际引起的逻辑错误可能复杂的多。</p>
+<pre><code>//问题5测试二  
+//用户自定义类加载器WrongClassLoader.Java(不覆写loadClass逻辑)  
+public class WrongClassLoader extends ClassLoader {  
+
+    protected Class&lt;?&gt; findClass(String name) throws ClassNotFoundException {  
+        //假设此处只是到工程以外的特定目录D:\library下去加载类  
+        //具体实现代码省略  
+    }  
+}  
+</code></pre><p>将自定义类加载器代码WrongClassLoader.Java做以上修改后，再运行测试代码，输出结果如下：<br><code>beans.Account</code><br><code>WrongClassLoader@1c78e57</code></p>
+<ul>
+<li><p>正确设置父类加载器<br>通过上面问题4和问题5的分析我们应该已经理解，个人觉得这是自定义用户类加载器时最重要的一点，但常常被忽略或者轻易带过。有了前面JDK代码的分析作为基础，我想现在大家都可以随便举出例子了。</p>
+</li>
+<li><p>保证findClass(String name)方法的逻辑正确性<br>事先尽量准确理解待定义的类加载器要完成的加载任务，确保最大程度上能够获取到对应的字节码内容。</p>
+</li>
+</ul>
+<p><strong>4.6 如何在运行时判断系统类加载器能加载哪些路径下的类？</strong></p>
+<ul>
+<li>一是可以直接调用ClassLoader.getSystemClassLoader()或者其他方式获取到系统类加载器（系统类加载器和扩展类加载器本身都派生自URLClassLoader），调用URLClassLoader中的getURLs()方法可以获取到。</li>
+<li>二是可以直接通过获取系统属性java.class.path来查看当前类路径上的条目信息 ：System.getProperty(“java.class.path”)。</li>
+</ul>
+<p><strong>4.7 如何在运行时判断标准扩展类加载器能加载哪些路径下的类？</strong><br>方法之一：</p>
+<pre><code>import java.net.URL;  
+import java.net.URLClassLoader;  
+
+public class ClassLoaderTest {  
+
+    /** 
+     * @param args the command line arguments 
+     */  
+    public static void main(String[] args) {  
+        try {  
+            URL[] extURLs = ((URLClassLoader) ClassLoader.getSystemClassLoader().getParent()).getURLs();  
+            for (int i = 0; i &lt; extURLs.length; i++) {  
+                System.out.println(extURLs[i]);  
+            }  
+        } catch (Exception e) {  
+            //…  
+        }  
+    }  
+}  
+</code></pre><p>本机对应输出如下：</p>
+<pre><code>file:/C:/Program%20Files/Java/jdk1.8.0_05/jre/lib/ext/access-bridge-64.jar  
+file:/C:/Program%20Files/Java/jdk1.8.0_05/jre/lib/ext/cldrdata.jar  
+file:/C:/Program%20Files/Java/jdk1.8.0_05/jre/lib/ext/dnsns.jar  
+file:/C:/Program%20Files/Java/jdk1.8.0_05/jre/lib/ext/jaccess.jar  
+file:/C:/Program%20Files/Java/jdk1.8.0_05/jre/lib/ext/jfxrt.jar  
+file:/C:/Program%20Files/Java/jdk1.8.0_05/jre/lib/ext/localedata.jar  
+file:/C:/Program%20Files/Java/jdk1.8.0_05/jre/lib/ext/nashorn.jar  
+file:/C:/Program%20Files/Java/jdk1.8.0_05/jre/lib/ext/sunec.jar  
+file:/C:/Program%20Files/Java/jdk1.8.0_05/jre/lib/ext/sunjce_provider.jar  
+file:/C:/Program%20Files/Java/jdk1.8.0_05/jre/lib/ext/sunmscapi.jar  
+file:/C:/Program%20Files/Java/jdk1.8.0_05/jre/lib/ext/sunpkcs11.jar  
+file:/C:/Program%20Files/Java/jdk1.8.0_05/jre/lib/ext/zipfs.jar  
+</code></pre><h1 id="五、开发自己的类加载器"><a href="#五、开发自己的类加载器" class="headerlink" title="五、开发自己的类加载器"></a>五、开发自己的类加载器</h1><p>在前面介绍类加载器的代理委派模式的时候，提到过类加载器会首先代理给其它类加载器来尝试加载某个类。这就意味着真正完成类的加载工作的类加载器和启动这个加载过程的类加载器，有可能不是同一个。真正完成类的加载工作是通过调用defineClass来实现的；而启动类的加载过程是通过调用loadClass来实现的。前者称为一个类的定义加载器（defining loader），后者称为初始加载器（initiating loader）。在Java虚拟机判断两个类是否相同的时候，使用的是类的定义加载器。也就是说，哪个类加载器启动类的加载过程并不重要，重要的是最终定义这个类的加载器。两种类加载器的关联之处在于：一个类的定义加载器是它引用的其它类的初始加载器。如类 com.example.Outer引用了类 com.example.Inner，则由类 com.example.Outer的定义加载器负责启动类 com.example.Inner的加载过程。</p>
+<p>方法 loadClass()抛出的是 java.lang.ClassNotFoundException异常；方法 defineClass()抛出的是 java.lang.NoClassDefFoundError异常。</p>
+<p>类加载器在成功加载某个类之后，会把得到的 java.lang.Class类的实例缓存起来。下次再请求加载该类的时候，类加载器会直接使用缓存的类的实例，而不会尝试再次加载。也就是说，对于一个类加载器实例来说，相同全名的类只加载一次，即 loadClass方法不会被重复调用。</p>
+<p>在绝大多数情况下，系统默认提供的类加载器实现已经可以满足需求。但是在某些情况下，您还是需要为应用开发出自己的类加载器。比如您的应用通过网络来传输Java类的字节代码，为了保证安全性，这些字节代码经过了加密处理。这个时候您就需要自己的类加载器来从某个网络地址上读取加密后的字节代码，接着进行解密和验证，最后定义出要在Java虚拟机中运行的类来。下面将通过两个具体的实例来说明类加载器的开发。</p>
+<h2 id="5-1-文件系统类加载器"><a href="#5-1-文件系统类加载器" class="headerlink" title="5.1 文件系统类加载器"></a>5.1 文件系统类加载器</h2><p>第一个类加载器用来加载存储在文件系统上的Java字节代码。完整的实现如下所示。</p>
+<pre><code>package classloader;  
+
+import java.io.ByteArrayOutputStream;  
+import java.io.File;  
+import java.io.FileInputStream;  
+import java.io.IOException;  
+import java.io.InputStream;  
+
+// 文件系统类加载器  
+public class FileSystemClassLoader extends ClassLoader {  
+
+    private String rootDir;  
+
+    public FileSystemClassLoader(String rootDir) {  
+        this.rootDir = rootDir;  
+    }  
+
+    // 获取类的字节码  
+    @Override  
+    protected Class&lt;?&gt; findClass(String name) throws ClassNotFoundException {  
+        byte[] classData = getClassData(name);  // 获取类的字节数组  
+        if (classData == null) {  
+            throw new ClassNotFoundException();  
+        } else {  
+            return defineClass(name, classData, 0, classData.length);  
+        }  
+    }  
+
+    private byte[] getClassData(String className) {  
+        // 读取类文件的字节  
+        String path = classNameToPath(className);  
+        try {  
+            InputStream ins = new FileInputStream(path);  
+            ByteArrayOutputStream baos = new ByteArrayOutputStream();  
+            int bufferSize = 4096;  
+            byte[] buffer = new byte[bufferSize];  
+            int bytesNumRead = 0;  
+            // 读取类文件的字节码  
+            while ((bytesNumRead = ins.read(buffer)) != -1) {  
+                baos.write(buffer, 0, bytesNumRead);  
+            }  
+            return baos.toByteArray();  
+        } catch (IOException e) {  
+            e.printStackTrace();  
+        }  
+        return null;  
+    }  
+
+    private String classNameToPath(String className) {  
+        // 得到类文件的完全路径  
+        return rootDir + File.separatorChar  
+                + className.replace(&#39;.&#39;, File.separatorChar) + &quot;.class&quot;;  
+    }  
+}  
+</code></pre><p>如上所示，类 FileSystemClassLoader继承自类java.lang.ClassLoader。在java.lang.ClassLoader类的常用方法中，一般来说，自己开发的类加载器只需要覆写 findClass(String name)方法即可。java.lang.ClassLoader类的方法loadClass()封装了前面提到的代理模式的实现。该方法会首先调用findLoadedClass()方法来检查该类是否已经被加载过；如果没有加载过的话，会调用父类加载器的loadClass()方法来尝试加载该类；如果父类加载器无法加载该类的话，就调用findClass()方法来查找该类。因此，为了保证类加载器都正确实现代理模式，在开发自己的类加载器时，最好不要覆写 loadClass()方法，而是覆写 findClass()方法。</p>
+<p>类 FileSystemClassLoader的 findClass()方法首先根据类的全名在硬盘上查找类的字节代码文件（.class 文件），然后读取该文件内容，最后通过defineClass()方法来把这些字节代码转换成 java.lang.Class类的实例。</p>
+<p>加载本地文件系统上的类，示例如下：</p>
+<pre><code>package com.example;  
+
+public class Sample {  
+
+    private Sample instance;  
+
+    public void setSample(Object instance) {  
+        System.out.println(instance.toString());  
+        this.instance = (Sample) instance;  
+    }  
+}  
+</code></pre><p><br></p>
+<pre><code>package classloader;  
+
+import java.lang.reflect.Method;  
+
+public class ClassIdentity {  
+
+    public static void main(String[] args) {  
+        new ClassIdentity().testClassIdentity();  
+    }  
+
+    public void testClassIdentity() {  
+        String classDataRootPath = &quot;C:\\Users\\JackZhou\\Documents\\NetBeansProjects\\classloader\\build\\classes&quot;;  
+        FileSystemClassLoader fscl1 = new FileSystemClassLoader(classDataRootPath);  
+        FileSystemClassLoader fscl2 = new FileSystemClassLoader(classDataRootPath);  
+        String className = &quot;com.example.Sample&quot;;  
+        try {  
+            Class&lt;?&gt; class1 = fscl1.loadClass(className);  // 加载Sample类  
+            Object obj1 = class1.newInstance();  // 创建对象  
+            Class&lt;?&gt; class2 = fscl2.loadClass(className);  
+            Object obj2 = class2.newInstance();  
+            Method setSampleMethod = class1.getMethod(&quot;setSample&quot;, java.lang.Object.class);  
+            setSampleMethod.invoke(obj1, obj2);  
+        } catch (Exception e) {  
+            e.printStackTrace();  
+        }  
+    }  
+}  
+</code></pre><p>运行输出：</p>
+<p><code>com.example.Sample@7852e922</code></p>
+<h2 id="5-2-网络类加载器"><a href="#5-2-网络类加载器" class="headerlink" title="5.2 网络类加载器"></a>5.2 网络类加载器</h2><p>下面将通过一个网络类加载器来说明如何通过类加载器来实现组件的动态更新。即基本的场景是：Java 字节代码（.class）文件存放在服务器上，客户端通过网络的方式获取字节代码并执行。当有版本更新的时候，只需要替换掉服务器上保存的文件即可。通过类加载器可以比较简单的实现这种需求。</p>
+<p>类 NetworkClassLoader负责通过网络下载Java类字节代码并定义出Java类。它的实现与FileSystemClassLoader类似。</p>
+<pre><code>package classloader;  
+
+import java.io.ByteArrayOutputStream;  
+import java.io.InputStream;  
+import java.net.URL;  
+
+public class NetworkClassLoader extends ClassLoader {  
+
+    private String rootUrl;  
+
+    public NetworkClassLoader(String rootUrl) {  
+        // 指定URL  
+        this.rootUrl = rootUrl;  
+    }  
+
+    // 获取类的字节码  
+    @Override  
+    protected Class&lt;?&gt; findClass(String name) throws ClassNotFoundException {  
+        byte[] classData = getClassData(name);  
+        if (classData == null) {  
+            throw new ClassNotFoundException();  
+        } else {  
+            return defineClass(name, classData, 0, classData.length);  
+        }  
+    }  
+
+    private byte[] getClassData(String className) {  
+        // 从网络上读取的类的字节  
+        String path = classNameToPath(className);  
+        try {  
+            URL url = new URL(path);  
+            InputStream ins = url.openStream();  
+            ByteArrayOutputStream baos = new ByteArrayOutputStream();  
+            int bufferSize = 4096;  
+            byte[] buffer = new byte[bufferSize];  
+            int bytesNumRead = 0;  
+            // 读取类文件的字节  
+            while ((bytesNumRead = ins.read(buffer)) != -1) {  
+                baos.write(buffer, 0, bytesNumRead);  
+            }  
+            return baos.toByteArray();  
+        } catch (Exception e) {  
+            e.printStackTrace();  
+        }  
+        return null;  
+    }  
+
+    private String classNameToPath(String className) {  
+        // 得到类文件的URL  
+        return rootUrl + &quot;/&quot;  
+                + className.replace(&#39;.&#39;, &#39;/&#39;) + &quot;.class&quot;;  
+    }  
+}  
+</code></pre><p>在通过NetworkClassLoader加载了某个版本的类之后，一般有两种做法来使用它。第一种做法是使用Java反射API。另外一种做法是使用接口。需要注意的是，并不能直接在客户端代码中引用从服务器上下载的类，因为客户端代码的类加载器找不到这些类。使用Java反射API可以直接调用Java类的方法。而使用接口的做法则是把接口的类放在客户端中，从服务器上加载实现此接口的不同版本的类。在客户端通过相同的接口来使用这些实现类。我们使用接口的方式。示例如下：</p>
+<p>客户端接口：</p>
+<pre><code>package classloader;  
+
+public interface Versioned {  
+
+    String getVersion();  
+}  
+</code></pre><p><br></p>
+<pre><code>package classloader;  
+
+public interface ICalculator extends Versioned {  
+
+    String calculate(String expression);  
+}  
+</code></pre><p>网络上的不同版本的类：</p>
+<pre><code>package com.example;  
+
+import classloader.ICalculator;  
+
+public class CalculatorBasic implements ICalculator {  
+
+    @Override  
+    public String calculate(String expression) {  
+        return expression;  
+    }  
+
+    @Override  
+    public String getVersion() {  
+        return &quot;1.0&quot;;  
+    }  
+
+} 
+</code></pre><p><br></p>
+<pre><code>package com.example;  
+
+import classloader.ICalculator;  
+
+public class CalculatorAdvanced implements ICalculator {  
+
+    @Override  
+    public String calculate(String expression) {  
+        return &quot;Result is &quot; + expression;  
+    }  
+
+    @Override  
+    public String getVersion() {  
+        return &quot;2.0&quot;;  
+    }  
+
+}  
+</code></pre><p>在客户端加载网络上的类的过程：</p>
+<pre><code>package classloader;  
+
+public class CalculatorTest {  
+
+    public static void main(String[] args) {  
+        String url = &quot;http://localhost:8080/ClassloaderTest/classes&quot;;  
+        NetworkClassLoader ncl = new NetworkClassLoader(url);  
+        String basicClassName = &quot;com.example.CalculatorBasic&quot;;  
+        String advancedClassName = &quot;com.example.CalculatorAdvanced&quot;;  
+        try {  
+            Class&lt;?&gt; clazz = ncl.loadClass(basicClassName);  // 加载一个版本的类  
+            ICalculator calculator = (ICalculator) clazz.newInstance();  // 创建对象  
+            System.out.println(calculator.getVersion());  
+            clazz = ncl.loadClass(advancedClassName);  // 加载另一个版本的类  
+            calculator = (ICalculator) clazz.newInstance();  
+            System.out.println(calculator.getVersion());  
+        } catch (Exception e) {  
+            e.printStackTrace();  
+        }  
+    }  
+
+}  
+</code></pre><h1 id="参考文献"><a href="#参考文献" class="headerlink" title="参考文献"></a>参考文献</h1><p><a href="http://www.blogjava.net/zhuxing/archive/2008/08/08/220841.html" target="_blank" rel="noopener">http://www.blogjava.net/zhuxing/archive/2008/08/08/220841.html</a>  </p>
+<p><a href="http://www.ibm.com/developerworks/cn/java/j-lo-classloader/" target="_blank" rel="noopener">http://www.ibm.com/developerworks/cn/java/j-lo-classloader/</a></p>
+</div>
+        </div>
+        <!-- .entry-content -->
+        <div class="single-reward">
+          <div class="reward-open">赏
+            <div class="reward-main">
+              <ul class="reward-row">
+                <li class="alipay-code"><img src="https://cdn.jsdelivr.net/gh/pengjunlee/picture-warehouse/img/AliPayQR.jpg"></li>
+                <li class="wechat-code"><img src="https://cdn.jsdelivr.net/gh/pengjunlee/picture-warehouse/img/WeChanQR.jpg"></li>
+              </ul>
+            </div>
+          </div>
+        </div>
+        <div style="text-align:center; width: 100%" class="social-share share-mobile" data-disabled="diandian, tencent"></div>
+        <footer class="post-footer">
+          <div class="post-lincenses"><a href="https://creativecommons.org/licenses/by-nc-sa/4.0/deed.zh" target="_blank" rel="nofollow"><i class="fa fa-creative-commons" aria-hidden="true"></i> 知识共享署名-非商业性使用-相同方式共享 4.0 国际许可协议</a></div>
+          <div class="post-tags">
+          </div>
+          <div class="post-share">
+            <div class="social-share sharehidden share-component"></div>
+            <i class="iconfont show-share icon-forward"></i>
+          </div>
+        </footer><!-- .entry-footer -->
+      </article>
+      <!-- #post-## -->
+      <div class="toc" style="background: none;"></div>
+      <section class="post-squares nextprev">
+        
+          
+            <div class="post-nepre half previous">
+          
+            <a href="/2020/05/30/深入理解JVM之--线程上下文类加载器/" rel="prev">
+              <div class="background">
+                <img class="lazyload" src="https://cdn.jsdelivr.net/gh/pengjunlee/picture-warehouse/img/orange.progress-bar-stripe-loader.svg" data-src="https://cdn.jsdelivr.net/gh/pengjunlee/picture-warehouse/java-jvm/jvm11.png" style="width: 100%; height: 100%; object-fit: cover; pointer-events: none;" onerror="imgError(this,3)" src="https://cdn.jsdelivr.net/gh/pengjunlee/picture-warehouse/java-jvm/jvm11.png">
+              </div>
+              <span class="label">
+              Previous Post</span>
+              <div class="info">
+                <h3>
+                深入理解JVM系列之--线程上下文类加载器</h3>
+                <hr>
+              </div>
+            </a>
+          </div>
+        
+        
+          
+            <div class="post-nepre half next">
+          
+            <a href="/2020/05/30/深入理解JVM之--虚拟机字节码执行引擎/" rel="next">
+              <div class="background">
+                <img class="lazyload" src="https://cdn.jsdelivr.net/gh/pengjunlee/picture-warehouse/img/orange.progress-bar-stripe-loader.svg" data-src="https://cdn.jsdelivr.net/gh/pengjunlee/picture-warehouse/java-jvm/jvm8.png" style="width: 100%; height: 100%; object-fit: cover; pointer-events: none;" onerror="imgError(this,3)" src="https://cdn.jsdelivr.net/gh/pengjunlee/picture-warehouse/java-jvm/jvm8.png">
+              </div>
+              <span class="label">
+              Next Post</span>
+              <div class="info">
+                <h3>
+                深入理解JVM系列之--虚拟机字节码执行引擎</h3>
+                <hr>
+              </div>
+            </a>
+          </div>
+        
+      </section>
+      
+<div id="vcomments"></div>
+<script>
+  window.onload = function(){
+      var valine = new Valine();
+      valine.init({
+        el: '#vcomments',
+        appId: "k0QcRvFFw7AovKS8un6pys2S-gzGzoHsz",
+        appKey: "Y5w42nyHhdKlYHT00svHuIya",
+        path: window.location.pathname,
+        placeholder: "你是我一生只会遇见一次的惊喜 ..."
+      })
+  }
+</script>
+
+      <section class="author-profile">
+        <div class="info" itemprop="author" itemscope="" itemtype="https://schema.org/Person">
+          <a href="pengjunlee" class="profile gravatar"><img src="https://cdn.jsdelivr.net/gh/pengjunlee/picture-warehouse/img/logo.jpg" itemprop="image" alt="李朋军" height="70" width="70"></a>
+          <div class="meta">
+            <span class="title">Author</span>
+            <h3 itemprop="name">
+            <a href="pengjunlee" itemprop="url" rel="author">李朋军</a>
+            </h3>
+          </div>
+        </div>
+        <hr>
+        <p><i class="iconfont icon-write"></i>为他人带来阳光的人，自己也一定会沐浴在阳光下。</p>
+      </section>
+    </main><!-- #main -->
+  </div><!-- #primary -->
+</div>
+
+
+
+    </div>    
+    <div class="ins-search">
+    <div class="ins-search-mask"></div>
+    <div class="ins-search-container">
+        <div class="ins-input-wrapper">
+            <input type="text" class="ins-search-input" placeholder="请输入关键词..."/>
+            <span class="ins-close ins-selectable"><i class="fa fa-times-circle"></i></span>
+        </div>
+        <div class="ins-section-wrapper">
+            <div class="ins-section-container"></div>
+        </div>
+    </div>
+</div>
+<script>
+(function (window) {
+    var INSIGHT_CONFIG = {
+        TRANSLATION: {
+            POSTS: '文章',
+            // PAGES: '页面',
+            CATEGORIES: '分类',
+            TAGS: '标签',
+        },
+        ROOT_URL: '/',
+        CONTENT_URL: '/content.json',
+    };
+    window.INSIGHT_CONFIG = INSIGHT_CONFIG;
+})(window);
+</script>
+    <!-- <footer id="footer">
+  
+  <div class="outer">
+    <div id="footer-info" class="inner">
+      &copy; 2023 pengjunlee<br>
+      powered_by <a href="http://hexo.io/" target="_blank">Hexo</a>
+    </div>
+  </div>
+</footer> -->
+<footer id="colophon" class="site-footer" role="contentinfo">
+  <div class="site-info">
+    <div class="footertext">
+      <div class="img-preload">
+        <img src="https://cdn.jsdelivr.net/gh/honjun/cdn@1.6/img/other/wordpress-rotating-ball-o.svg">
+        <img src="https://cdn.jsdelivr.net/gh/honjun/cdn@1.6/img/other/disqus-preloader.svg">
+      </div>
+      <p style="color: #666666;">&copy 2018</p>
+    </div>
+    <div class="footer-device">
+    <p style="font-family: 'Ubuntu', sans-serif;">
+        <span style="color: #b9b9b9;">Theme <a href="https://github.com/honjun/hexo-theme-sakura" target="_blank" style="color: #b9b9b9;;text-decoration: underline dotted rgba(0, 0, 0, .1);">Sakura</a> <i class="iconfont icon-sakura rotating" style="color: #ffc0cb;display:inline-block"></i> by <a href="https://2heng.xin/" target="_blank" style="color: #b9b9b9;;text-decoration: underline dotted rgba(0, 0, 0, .1);">Mashiro</a>&<a href="https://www.hojun.cn/" target="_blank" style="color: #b9b9b9;;text-decoration: underline dotted rgba(0, 0, 0, .1);">Hojun</a>, Powered by Hexo, Hosted by Coding Pages</a>
+        </span>
+      </p>
+    </div>
+  </div><!-- .site-info -->
+</footer>
+
+
+
+<!-- <script src="/js/tocbot.js"></script> -->
+<script type="text/javascript" src="/js/lib.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/clipboard@2/dist/clipboard.min.js"></script>
+<script type="text/javascript" src="/js/InsightSearch.js"></script>
+<script type="text/javascript" src="/js/jquery.fancybox.min.js"></script>
+<script type="text/javascript" src="/js/zoom.min.js"></script>
+<script type="text/javascript" src="/js/sakura-app.js"></script>
+<script src="//cdn1.lncld.net/static/js/3.0.4/av-min.js"></script>
+<script src='//unpkg.com/valine@1.3.4/dist/Valine.min.js'></script>
+<script src="/js/botui.js"></script>
+<!-- 不蒜子 网页计数器 -->
+<script src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+<!-- <script src="https://cdnjs.cloudflare.com/ajax/libs/tocbot/4.4.2/tocbot.min.js"></script> -->
+<script type="text/javascript">
+/* <![CDATA[ */
+if (/Android|webOS|iPhone|iPod|BlackBerry/i.test(navigator.userAgent)) {
+  var Poi = {"pjax":"1","movies":{"url": "https://cdn.jsdelivr.net/gh/pengjunlee/picture-warehouse/img","name":"Unbroken.mp4","live":"close"},"windowheight":"fixed","codelamp":"close","ajaxurl":"","order":"asc","formpostion":"bottom"};
+} else {
+  var Poi = {"pjax":"1","movies":{"url": "https://cdn.jsdelivr.net/gh/pengjunlee/picture-warehouse/img","name":"Unbroken.mp4","live":"open"},"windowheight":"auto","codelamp":"close","ajaxurl":"","order":"asc","formpostion":"bottom"};
+}
+/* ]]> */
+
+</script>
+<script>
+$(document).ready(function() {
+  if ($(".toc").length > 0 && document.body.clientWidth > 1200) {
+    if ($(".pattern-center").length > 0) { //有图的情况
+      tocbot.init({
+          // Where to render the table of contents.
+          tocSelector: '.toc', // 放置目录的容器
+          // Where to grab the headings to build the table of contents.
+          contentSelector: '.entry-content', // 正文内容所在
+          // Which headings to grab inside of the contentSelector element.
+          scrollSmooth: true,
+          headingSelector: 'h1, h2, h3, h4, h5', // 需要索引的标题级别
+          headingsOffset: -400,
+          scrollSmoothOffset: -85
+      });
+    } else {
+      tocbot.init({
+          // Where to render the table of contents.
+          tocSelector: '.toc', // 放置目录的容器
+          // Where to grab the headings to build the table of contents.
+          contentSelector: '.entry-content', // 正文内容所在
+          // Which headings to grab inside of the contentSelector element.
+          scrollSmooth: true,
+          headingSelector: 'h1, h2, h3, h4, h5', // 需要索引的标题级别
+          headingsOffset: -85,
+          scrollSmoothOffset: -85
+      });
+    }
+    var offsetTop = $('.toc').offset().top - 95;
+    window.onscroll = function() {
+      var scrollTop = window.pageYOffset || document.documentElement.scrollTop || document.body.scrollTop;
+      if (scrollTop >= offsetTop) {
+        $('.toc').addClass('toc-fixed');
+      } else {
+        $('.toc').removeClass('toc-fixed');
+      }
+    }
+  }
+});
+</script>
+
+    <div class="openNav no-select" style="height: 50px;">
+      <div class="iconflat no-select" style="width: 50px; height: 50px;">
+        <div class="icon"></div>
+      </div>
+      <div class="site-branding search-form-submit">
+        <i class="iconfont js-toggle-search iconsearch icon-search"></i>
+      </div>
+    </div>
+  </section>
+  <div id="mo-nav" class="">
+  <div class="m-avatar">
+    <img src="https://cdn.jsdelivr.net/gh/pengjunlee/picture-warehouse/img/avatar.jpg">
+  </div>
+  <p style="text-align: center; color: #333; font-weight: 900; font-family: 'Ubuntu', sans-serif; letter-spacing: 1.5px">李朋军</p>
+  <p style="text-align: center; word-spacing: 20px;">
+    
+      
+        <a href="http://github.com/honjun" class="fa fa-github" target="_blank" style="color: #333; margin-left:20px"></a>
+      
+        <a href="http://weibo.com/mashirozx?is_all=1" class="fa fa-weibo" target="_blank" style="color: #dd4b39; margin-left:20px"></a>
+      
+        <a href="https://wpa.qq.com/msgrd?v=3&uin=954655431&site=qq&menu=yes" class="fa fa-qq" target="_blank" style="color: #25c6fe; margin-left:20px"></a>
+      
+    
+  </p>
+  <ul id="menu-new-1" class="menu">
+    
+      <li>
+        <a href="/">
+          <span class="faa-parent animated-hover">
+            <i class="fa  fa-fort-awesome faa-shake" aria-hidden="true"></i>
+            首页
+          </span>
+        </a>
+        
+      </li>
+    
+      <li>
+        <a href="/archives">
+          <span class="faa-parent animated-hover">
+            <i class="fa  fa-archive faa-shake" aria-hidden="true"></i>
+            归档
+          </span>
+        </a>
+        
+          <ul class="sub-menu">
+            
+              <li>
+                <a href="/categories/编程/">
+                  <i class="fa fa-code" aria-hidden="true"></i>
+                  编程
+                </a>
+              </li>
+            
+              <li>
+                <a href="/categories/技术/">
+                  <i class="fa fa-cogs" aria-hidden="true"></i>
+                  技术
+                </a>
+              </li>
+            
+              <li>
+                <a href="/categories/生活/">
+                  <i class="fa fa-file-text-o" aria-hidden="true"></i>
+                  生活
+                </a>
+              </li>
+            
+              <li>
+                <a href="/categories/资源/">
+                  <i class="fa fa-cloud-download" aria-hidden="true"></i>
+                  资源
+                </a>
+              </li>
+            
+              <li>
+                <a href="/categories/随想/">
+                  <i class="fa fa-commenting-o" aria-hidden="true"></i>
+                  随想
+                </a>
+              </li>
+            
+              <li>
+                <a href="/categories/转载/">
+                  <i class="fa fa-book" aria-hidden="true"></i>
+                  转载
+                </a>
+              </li>
+            
+          </ul>
+        
+      </li>
+    
+      <li>
+        <a href="javascript:;">
+          <span class="faa-parent animated-hover">
+            <i class="fa  fa-list-ul faa-vertical" aria-hidden="true"></i>
+            清单
+          </span>
+        </a>
+        
+          <ul class="sub-menu">
+            
+              <li>
+                <a href="/tags/悦读/">
+                  <i class="fa fa-th-list faa-bounce" aria-hidden="true"></i>
+                  书单
+                </a>
+              </li>
+            
+              <li>
+                <a href="/bangumi/">
+                  <i class="fa fa-film faa-vertical" aria-hidden="true"></i>
+                  番组
+                </a>
+              </li>
+            
+              <li>
+                <a href="/music/">
+                  <i class="fa fa-headphones" aria-hidden="true"></i>
+                  歌单
+                </a>
+              </li>
+            
+              <li>
+                <a href="/tags/图集/">
+                  <i class="fa fa-photo" aria-hidden="true"></i>
+                  图集
+                </a>
+              </li>
+            
+          </ul>
+        
+      </li>
+    
+      <li>
+        <a href="/comment/">
+          <span class="faa-parent animated-hover">
+            <i class="fa  fa-pencil-square-o faa-tada" aria-hidden="true"></i>
+            留言板
+          </span>
+        </a>
+        
+      </li>
+    
+      <li>
+        <a href="/links/">
+          <span class="faa-parent animated-hover">
+            <i class="fa  fa-link faa-shake" aria-hidden="true"></i>
+            友人帐
+          </span>
+        </a>
+        
+      </li>
+    
+      <li>
+        <a href="/donate/">
+          <span class="faa-parent animated-hover">
+            <i class="fa  fa-heart faa-pulse" aria-hidden="true"></i>
+            赞赏
+          </span>
+        </a>
+        
+      </li>
+    
+      <li>
+        <a href="/">
+          <span class="faa-parent animated-hover">
+            <i class="fa  fa-leaf faa-wrench" aria-hidden="true"></i>
+            关于
+          </span>
+        </a>
+        
+          <ul class="sub-menu">
+            
+              <li>
+                <a href="/about/">
+                  <i class="fa fa-meetup" aria-hidden="true"></i>
+                  我？
+                </a>
+              </li>
+            
+              <li>
+                <a href="/theme-sakura/">
+                  <i class="fa iconfont icon-sakura" aria-hidden="true"></i>
+                  主题
+                </a>
+              </li>
+            
+              <li>
+                <a href="/lab/">
+                  <i class="fa fa-cogs" aria-hidden="true"></i>
+                  Lab
+                </a>
+              </li>
+            
+          </ul>
+        
+      </li>
+    
+      <li>
+        <a href="/client/">
+          <span class="faa-parent animated-hover">
+            <i class="fa  fa-android faa-vertical" aria-hidden="true"></i>
+            客户端
+          </span>
+        </a>
+        
+      </li>
+    
+      <li>
+        <a href="/atom.xml">
+          <span class="faa-parent animated-hover">
+            <i class="fa  fa-rss faa-pulse" aria-hidden="true"></i>
+            RSS
+          </span>
+        </a>
+        
+      </li>
+    
+  </ul>
+  <p style="text-align: center; font-size: 13px; color: #b9b9b9;">&copy 2019 hexo-sakura</p>
+</div>
+<button onclick="topFunction()" class="mobile-cd-top" id="moblieGoTop" title="Go to top" style="display: none;"><i class="fa fa-chevron-up" aria-hidden="true"></i></button>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/aplayer/dist/APlayer.min.css">
+<script src="https://cdn.jsdelivr.net/npm/aplayer/dist/APlayer.min.js"></script>
+<!-- require MetingJS -->
+<script src="https://cdn.jsdelivr.net/npm/meting@2/dist/Meting.min.js"></script>
+<style>
+  .aplayer .aplayer-lrc {
+    height: 35px;
+  }
+  .aplayer .aplayer-lrc p{
+    font-size: 16px;
+    font-weight: 700;
+    line-height: 18px !important;
+  }
+  .aplayer .aplayer-lrc p.aplayer-lrc-current{
+    color: #FF1493;
+  }
+  .aplayer.aplayer-narrow .aplayer-body{
+    left: -66px !important;
+  }
+  .aplayer.aplayer-fixed .aplayer-lrc {
+    display: none;
+  }
+  .aplayer .aplayer-lrc.aplayer-lrc-hide {
+      display:none !important;
+  }
+  .aplayer.aplayer-fixed .lrc-show {
+    display: block;
+    background: rgba(255, 255, 255, 0.8);
+  }
+</style>
+<meting-js
+
+    id="2660651585"
+
+    server="netease"
+
+    type="playlist"
+
+    fixed="true"
+
+    autoplay="false"
+
+    loop="all"
+
+    order="random"
+
+    preload="auto"
+
+    volume="0.7"
+
+    mutex="true"
+
+</meting-js>
+<script>
+  $(function(){
+    $('body').on('click', '.aplayer', function(){
+      if($('.aplayer-button').hasClass('aplayer-play')) {
+        $('.aplayer-lrc').removeClass('lrc-show');
+      } else {
+        $('.aplayer-lrc').addClass('lrc-show');
+      }
+    })
+  });
+</script>
+</body>
+</html>

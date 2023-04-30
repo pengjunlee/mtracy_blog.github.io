@@ -1,0 +1,1343 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head><meta name="generator" content="Hexo 3.9.0">
+  <meta charset="utf-8">
+  <meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0" name="viewport">
+  
+  <title itemprop="name">深入理解JVM系列之--线程上下文类加载器 | 李朋军的个人博客</title>
+  
+    <link rel="shortcut icon" href="/images/favicon.jpg">
+  
+  <meta http-equiv="x-dns-prefetch-control" content="on">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Noto+SerifMerriweather|Merriweather+Sans|Source+Code+Pro|Ubuntu:400,700|Noto+Serif+SC" media="all">
+  <link rel="dns-prefetch" href="//cdn.jsdelivr.net">
+  <link rel="stylesheet" id="saukra_css-css" href="/css/style.css" type="text/css" media="all">
+  <link rel="stylesheet" href="/css/lib.min.css" media="all">
+  <link rel="stylesheet" href="/css/font.css" media="all">
+  <link rel="stylesheet" href="/css/insight.css" media="all">
+  <link rel="stylesheet" href="/css/jquery.fancybox.min.css" media="all">
+  <link rel="stylesheet" href="/css/zoom.css" media="all">
+  <link rel="stylesheet" type="text/css" href="/css/sharejs.css">
+<!--   <link rel="stylesheet" id="saukra_css-css" href="https://2heng.xin/wp-content/cache/autoptimize/css/autoptimize_ad42a61f4c7d4bdd9f91afcff6b5dda5.css
+" type="text/css" media="all"> -->
+  <script>
+  /*Initial Variables*/
+  var mashiro_option = new Object();
+  var mashiro_global = new Object();
+  mashiro_option.NProgressON = true;
+  /* 
+   * 邮箱信息之类的东西可以填在这里，这些js变量基本都作用于sakura-app.js
+   * 这样的设置仅是为了方便在基于PHP开发的主题中设置js变量，既然移植到了Node上，我想或许可以精简这一逻辑吧
+   */
+  mashiro_option.email_domain = "";
+  mashiro_option.email_name = "";
+  mashiro_option.cookie_version_control = "";
+  mashiro_option.qzone_autocomplete = false;
+  mashiro_option.site_name = "李朋军";
+  mashiro_option.author_name = "朋军";
+  mashiro_option.site_url = "http://blog.mtracy.club/";
+  mashiro_option.v_appId = "k0QcRvFFw7AovKS8un6pys2S-gzGzoHsz";
+  mashiro_option.v_appKey = "Y5w42nyHhdKlYHT00svHuIya";
+  mashiro_option.mathjax = "0";
+  mashiro_option.qq_api_url = "https://api.mashiro.top/qqinfo/"; 
+  mashiro_option.qq_avatar_api_url = "https://api.mashiro.top/qqinfo/";
+
+  // mashiro_option.jsdelivr_css_src = "https://cdn.jsdelivr.net/gh/moezx/cdn@3.4.5/css/lib.min.css";
+  // mashiro_option.float_player_on = true;
+
+  /*End of Initial Variables*/
+  </script>
+  <script type="text/javascript">
+  var bg = "https://cdn.jsdelivr.net/gh/pengjunlee/picture-warehouse/img/(1).jpg.webp,https://cdn.jsdelivr.net/gh/pengjunlee/picture-warehouse/img/(2).jpg.webp,https://cdn.jsdelivr.net/gh/pengjunlee/picture-warehouse/img/(3).jpg.webp,https://cdn.jsdelivr.net/gh/pengjunlee/picture-warehouse/img/(4).jpg.webp,https://cdn.jsdelivr.net/gh/pengjunlee/picture-warehouse/img/(5).jpg.webp,https://cdn.jsdelivr.net/gh/pengjunlee/picture-warehouse/img/(6).jpg.webp,https://cdn.jsdelivr.net/gh/pengjunlee/picture-warehouse/img/(7).jpg.webp,https://cdn.jsdelivr.net/gh/pengjunlee/picture-warehouse/img/(8).jpg.webp".split(",");
+  var bgindex = Math.floor(Math.random()*bg.length);
+  if (!!window.ActiveXObject || "ActiveXObject" in window) { //is IE?
+    alert('朋友，IE浏览器未适配哦~');
+  }
+  </script>
+  <style type="text/css">
+  .hljs-ln{border-collapse:collapse}.hljs-ln td{padding:0}.hljs-ln-n:before{content:attr(data-line-number)}
+  </style>
+  <style type="text/css">.site-top .lower nav{display:block !important;}.author-profile i,.post-like a,.post-share .show-share,.sub-text,.we-info a,span.sitename,.post-more i:hover,#pagination a:hover,.post-content a:hover,.float-content i:hover{color:#FE9600}.feature i,.download,.navigator i:hover,.links ul li:before,.ar-time i,span.ar-circle,.object,.comment .comment-reply-link,.siren-checkbox-radio:checked + .siren-checkbox-radioInput:after{background:#FE9600}::-webkit-scrollbar-thumb{background:#FE9600}.download,.navigator i:hover,.link-title,.links ul li:hover,#pagination a:hover,.comment-respond input[type='submit']:hover{border-color:#FE9600}.entry-content a:hover,.site-info a:hover,.comment h4 a,#comments-navi a.prev,#comments-navi a.next,.comment h4 a:hover,.site-top ul li a:hover,.entry-title a:hover,#archives-temp h3,span.page-numbers.current,.sorry li a:hover,.site-title a:hover,i.iconfont.js-toggle-search.iconsearch:hover,.comment-respond input[type='submit']:hover{color:#FE9600}.comments .comments-main{display:block !important;}.comments .comments-hidden{display:none !important;}background-position:center center;background-attachment:inherit;}
+  </style>
+</head>
+</html>
+<body class="page-template page-template-user page-template-page-analytics page-template-userpage-analytics-php page page-id-1297 chinese-font serif isWebKit">
+  <div class="scrollbar" id="bar">
+  </div>
+  <a href="#" class="cd-top faa-float animated"></a>
+  <section id="main-container">
+    <div class="headertop filter-grid">
+  <div id="banner_wave_1"></div>
+  <div id="banner_wave_2"></div>
+  <figure id="centerbg" class="centerbg">
+    <div class="focusinfo no-select">
+      <div class="header-tou">
+        <a href="http://blog.mtracy.club/">
+          <img src="https://cdn.jsdelivr.net/gh/pengjunlee/picture-warehouse/img/avatar.jpg">
+        </a>
+      </div>
+      <div class="header-info">
+        <p>千帆退却，我向前；天涯尽头，是晴天!</p>
+        <div class="top-social_v2">
+          <li id="bg-pre">
+            <img class="flipx" src="https://cdn.jsdelivr.net/gh/honjun/cdn@1.6/img/other/next-b.svg">
+          </li>
+          
+            
+              
+                <li>
+                  <a href="http://github.com/honjun" target="_blank" class="social-github" title="github">
+                    <img src="https://cdn.jsdelivr.net/gh/pengjunlee/picture-warehouse/img/github.png">
+                  </a>
+                </li>
+              
+            
+              
+                <li>
+                  <a href="http://weibo.com/mashirozx?is_all=1" target="_blank" class="social-github" title="sina">
+                    <img src="https://cdn.jsdelivr.net/gh/pengjunlee/picture-warehouse/img/sina.png">
+                  </a>
+                </li>
+              
+            
+              
+                <li>
+                  <a href="http://weibo.com/mashirozx?is_all=1" target="_blank" class="social-github" title="wangyiyun">
+                    <img src="https://cdn.jsdelivr.net/gh/pengjunlee/picture-warehouse/img/wangyiyun.png">
+                  </a>
+                </li>
+              
+            
+              
+                <li>
+                  <a href="http://weibo.com/mashirozx?is_all=1" target="_blank" class="social-github" title="zhihu">
+                    <img src="https://cdn.jsdelivr.net/gh/pengjunlee/picture-warehouse/img/zhihu.png">
+                  </a>
+                </li>
+              
+            
+              
+                <li>
+                  <a href="http://weibo.com/mashirozx?is_all=1" target="_blank" class="social-github" title="email">
+                    <img src="https://cdn.jsdelivr.net/gh/pengjunlee/picture-warehouse/img/email.svg">
+                  </a>
+                </li>
+              
+            
+              
+                <li class="wechat">
+                  <a href="/#">
+                    <img src="https://cdn.jsdelivr.net/gh/pengjunlee/picture-warehouse/img/wechat.png">
+                  </a>
+                  <div class="wechatInner">
+                    <img src="https://cdn.jsdelivr.net/gh/pengjunlee/picture-warehouse/img/wechat.jpg">
+                  </div>
+                </li>
+              
+            
+              
+                <li class="wechat">
+                  <a href="/#">
+                    <img src="https://cdn.jsdelivr.net/gh/pengjunlee/picture-warehouse/img/wechat.png">
+                  </a>
+                  <div class="wechatInner">
+                    <img src="https://cdn.jsdelivr.net/gh/pengjunlee/picture-warehouse/img/wechat.jpg">
+                  </div>
+                </li>
+              
+            
+          
+          <li id="bg-next">
+            <img src="https://cdn.jsdelivr.net/gh/honjun/cdn@1.6/img/other/next-b.svg">
+          </li>
+        </div>
+      </div>
+    </div>
+  </figure>
+  <div id="video-container" style="">
+    <video style="object-fit: fill" id="bgvideo" class="video" video-name="" src="" width="auto" preload="auto">
+    </video>
+    <div id="video-btn" class="loadvideo videolive">
+    </div>
+    <div id="video-add">
+    </div>
+    <div class="video-stu">
+    </div>
+  </div>
+  <div class="headertop-down faa-float animated" onclick="headertop_down()">
+    <span>
+      <i class="fa fa-chevron-down" aria-hidden="true">
+      </i>
+    </span>
+  </div>
+</div>
+    <div id="page" class="site wrapper">
+      <header class="site-header no-select gizle sabit" role="banner">
+  <div class="site-top">
+    <div class="site-branding">
+      <span class="site-title">
+        <span class="logolink moe-mashiro">
+          <a href="/">
+            <span class="sakurasono">李</span>
+            <span class="shironeko">朋军</span>
+          </a>
+        </span>
+      </span>
+    </div>
+    <div class="searchbox search-form-submit">
+      <i class="iconfont js-toggle-search iconsearch icon-search">
+      </i>
+    </div>
+    <div id="show-nav" class="showNav mobile-fit">
+      <div class="line line1">
+      </div>
+      <div class="line line2">
+      </div>
+      <div class="line line3">
+      </div>
+    </div>
+    <div class="lower-cantiner">
+      <div class="lower">
+        <nav class="mobile-fit-control hide">
+          <ul id="menu-new" class="menu">
+            
+              <li>
+                <a href="/">
+                  <span class="faa-parent animated-hover">
+                    <i class="fa  fa-fort-awesome faa-shake" aria-hidden="true"></i>
+                    首页
+                  </span>
+                </a>
+                
+              </li>
+            
+              <li>
+                <a href="/archives">
+                  <span class="faa-parent animated-hover">
+                    <i class="fa  fa-archive faa-shake" aria-hidden="true"></i>
+                    归档
+                  </span>
+                </a>
+                
+                  <ul class="sub-menu">
+                    
+                      <li>
+                        <a href="/categories/编程/">
+                          <i class="fa fa-code" aria-hidden="true"></i>
+                          编程
+                        </a>
+                      </li>
+                    
+                      <li>
+                        <a href="/categories/技术/">
+                          <i class="fa fa-cogs" aria-hidden="true"></i>
+                          技术
+                        </a>
+                      </li>
+                    
+                      <li>
+                        <a href="/categories/生活/">
+                          <i class="fa fa-file-text-o" aria-hidden="true"></i>
+                          生活
+                        </a>
+                      </li>
+                    
+                      <li>
+                        <a href="/categories/资源/">
+                          <i class="fa fa-cloud-download" aria-hidden="true"></i>
+                          资源
+                        </a>
+                      </li>
+                    
+                      <li>
+                        <a href="/categories/随想/">
+                          <i class="fa fa-commenting-o" aria-hidden="true"></i>
+                          随想
+                        </a>
+                      </li>
+                    
+                      <li>
+                        <a href="/categories/转载/">
+                          <i class="fa fa-book" aria-hidden="true"></i>
+                          转载
+                        </a>
+                      </li>
+                    
+                  </ul>
+                
+              </li>
+            
+              <li>
+                <a href="javascript:;">
+                  <span class="faa-parent animated-hover">
+                    <i class="fa  fa-list-ul faa-vertical" aria-hidden="true"></i>
+                    清单
+                  </span>
+                </a>
+                
+                  <ul class="sub-menu">
+                    
+                      <li>
+                        <a href="/tags/悦读/">
+                          <i class="fa fa-th-list faa-bounce" aria-hidden="true"></i>
+                          书单
+                        </a>
+                      </li>
+                    
+                      <li>
+                        <a href="/bangumi/">
+                          <i class="fa fa-film faa-vertical" aria-hidden="true"></i>
+                          番组
+                        </a>
+                      </li>
+                    
+                      <li>
+                        <a href="/music/">
+                          <i class="fa fa-headphones" aria-hidden="true"></i>
+                          歌单
+                        </a>
+                      </li>
+                    
+                      <li>
+                        <a href="/tags/图集/">
+                          <i class="fa fa-photo" aria-hidden="true"></i>
+                          图集
+                        </a>
+                      </li>
+                    
+                  </ul>
+                
+              </li>
+            
+              <li>
+                <a href="/comment/">
+                  <span class="faa-parent animated-hover">
+                    <i class="fa  fa-pencil-square-o faa-tada" aria-hidden="true"></i>
+                    留言板
+                  </span>
+                </a>
+                
+              </li>
+            
+              <li>
+                <a href="/links/">
+                  <span class="faa-parent animated-hover">
+                    <i class="fa  fa-link faa-shake" aria-hidden="true"></i>
+                    友人帐
+                  </span>
+                </a>
+                
+              </li>
+            
+              <li>
+                <a href="/donate/">
+                  <span class="faa-parent animated-hover">
+                    <i class="fa  fa-heart faa-pulse" aria-hidden="true"></i>
+                    赞赏
+                  </span>
+                </a>
+                
+              </li>
+            
+              <li>
+                <a href="/">
+                  <span class="faa-parent animated-hover">
+                    <i class="fa  fa-leaf faa-wrench" aria-hidden="true"></i>
+                    关于
+                  </span>
+                </a>
+                
+                  <ul class="sub-menu">
+                    
+                      <li>
+                        <a href="/about/">
+                          <i class="fa fa-meetup" aria-hidden="true"></i>
+                          我？
+                        </a>
+                      </li>
+                    
+                      <li>
+                        <a href="/theme-sakura/">
+                          <i class="fa iconfont icon-sakura" aria-hidden="true"></i>
+                          主题
+                        </a>
+                      </li>
+                    
+                      <li>
+                        <a href="/lab/">
+                          <i class="fa fa-cogs" aria-hidden="true"></i>
+                          Lab
+                        </a>
+                      </li>
+                    
+                  </ul>
+                
+              </li>
+            
+              <li>
+                <a href="/client/">
+                  <span class="faa-parent animated-hover">
+                    <i class="fa  fa-android faa-vertical" aria-hidden="true"></i>
+                    客户端
+                  </span>
+                </a>
+                
+              </li>
+            
+              <li>
+                <a href="/atom.xml">
+                  <span class="faa-parent animated-hover">
+                    <i class="fa  fa-rss faa-pulse" aria-hidden="true"></i>
+                    RSS
+                  </span>
+                </a>
+                
+              </li>
+            
+          </ul>
+        </nav>
+      </div>
+    </div>
+  </div>
+</header>
+
+      <link rel="stylesheet" type="text/css" href="/css/sharejs.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/tocbot/4.4.2/tocbot.css">
+<div class="pattern-center-blank"></div>
+
+  <div class="pattern-center single-center">
+    <!-- 有配图默认渲染第一张 -->
+    <div class="pattern-attachment-img lazyload" style="background-image: url(https://cdn.jsdelivr.net/gh/pengjunlee/picture-warehouse/java-jvm/jvm11.png);" src="https://cdn.jsdelivr.net/gh/pengjunlee/picture-warehouse/img/orange.progress-bar-stripe-loader.svg" data-src="https://cdn.jsdelivr.net/gh/pengjunlee/picture-warehouse/java-jvm/jvm11.png">
+    </div>
+    <header class="pattern-header single-header">
+      <h1 class="entry-title">
+      深入理解JVM系列之--线程上下文类加载器</h1>
+      <p class="entry-census">
+        <span>
+          <a href="pengjunlee">
+            <img src="https://cdn.jsdelivr.net/gh/pengjunlee/picture-warehouse/img/logo.jpg">
+          </a>
+        </span>
+        <span>
+          <a href="pengjunlee">李朋军</a>
+        </span>
+        <span class="bull">
+        ·</span>
+        2020-5-30<span class="bull">
+        ·</span>
+      <span id="busuanzi_value_page_pv"></span>次阅读</p>
+    </header>
+  </div>
+
+<div id="content" class="site-content">
+  <div id="primary" class="content-area">
+    <main id="main" class="site-main" role="main">
+      <article id="post-1" class="post-1 post type-post status-publish format-standard has-post-thumbnail hentry category-uncategorized">
+        <div class="toc"></div>
+        <!--<div class="toc-entry-content"><!-- 套嵌目录使用（主要为了支援评论）-->
+        
+        <div class="entry-content">
+          <blockquote>
+<p> 转载自：《深入理解Java类加载器(2)：线程上下文类加载器》</p>
+</blockquote>
+<h1 id="一、线程上下文类加载器"><a href="#一、线程上下文类加载器" class="headerlink" title="一、线程上下文类加载器"></a>一、线程上下文类加载器</h1><p>线程上下文类加载器（context class loader）是从 JDK 1.2 开始引入的。类<strong> java.lang.Thread</strong>中的方法 <code>getContextClassLoader()</code>和 <code>setContextClassLoader(ClassLoader cl)</code>用来获取和设置线程的上下文类加载器。如果没有通过 <code>setContextClassLoader(ClassLoader cl)</code>方法进行设置的话，线程将继承其父线程的上下文类加载器。Java 应用运行的初始线程的上下文类加载器是系统类加载器。在线程中运行的代码可以通过此类加载器来加载类和资源。</p>
+<p>前面提到的类加载器的代理模式并不能解决 Java 应用开发中会遇到的类加载器的全部问题。Java 提供了很多服务提供者接口（Service Provider Interface，SPI），允许第三方为这些接口提供实现。常见的 SPI 有 JDBC、JCE、JNDI、JAXP 和 JBI 等。这些 SPI 的接口由 Java 核心库来提供，如 JAXP 的 SPI 接口定义包含在 javax.xml.parsers包中。这些 SPI 的实现代码很可能是作为 Java 应用所依赖的 jar 包被包含进来，可以通过类路径（CLASSPATH）来找到，如实现了 JAXP SPI 的 Apache Xerces所包含的 jar 包。SPI 接口中的代码经常需要加载具体的实现类。如 JAXP 中的 <code>javax.xml.parsers.DocumentBuilderFactory</code>类中的 <code>newInstance()</code>方法用来生成一个新的 <code>DocumentBuilderFactory</code>的实例。这里的实例的真正的类是继承自 <code>javax.xml.parsers.DocumentBuilderFactory</code>，由 SPI 的实现所提供的。如在 Apache Xerces 中，实现的类是 <code>org.apache.xerces.jaxp.DocumentBuilderFactoryImpl</code>。而问题在于，SPI 的接口是 Java 核心库的一部分，是由引导类加载器来加载的；SPI 实现的 Java 类一般是由系统类加载器来加载的。引导类加载器是无法找到 SPI 的实现类的，因为它只加载 Java 的核心库。它也不能代理给系统类加载器，因为它是系统类加载器的祖先类加载器。也就是说，类加载器的代理模式无法解决这个问题。</p>
+<p>线程上下文类加载器正好解决了这个问题。如果不做任何的设置，Java 应用的线程的上下文类加载器默认就是系统上下文类加载器。在 SPI 接口的代码中使用线程上下文类加载器，就可以成功的加载到 SPI 实现的类。线程上下文类加载器在很多 SPI 的实现中都会用到。</p>
+<p>Java默认的线程上下文类加载器是系统类加载器(AppClassLoader)。以下代码摘自sun.misc.Launch的无参构造函数Launch()。</p>
+<pre><code>// Now create the class loader to use to launch the application
+try {
+    loader = AppClassLoader.getAppClassLoader(extcl);
+} catch (IOException e) {
+    throw new InternalError(
+&quot;Could not create application class loader&quot; );
+}
+
+
+// Also set the context class loader for the primordial thread.
+Thread.currentThread().setContextClassLoader(loader);
+</code></pre><p>使用线程上下文类加载器，可以在执行线程中抛弃双亲委派加载链模式，使用线程上下文里的类加载器加载类。典型的例子有：通过线程上下文来加载第三方库jndi实现，而不依赖于双亲委派。大部分java application服务器(jboss, tomcat..)也是采用contextClassLoader来处理web服务。还有一些采用hot swap特性的框架，也使用了线程上下文类加载器，比如 seasar (full stack framework in japenese)。</p>
+<p>线程上下文从根本解决了一般应用不能违背双亲委派模式的问题。使java类加载体系显得更灵活。随着多核时代的来临，相信多线程开发将会越来越多地进入程序员的实际编码过程中。因此，在编写基础设施时， 通过使用线程上下文来加载类，应该是一个很好的选择。</p>
+<p>当然，好东西都有利弊。使用线程上下文加载类，也要注意保证多个需要通信的线程间的类加载器应该是同一个，防止因为不同的类加载器导致类型转换异常(ClassCastException)。</p>
+<p>defineClass(String name, byte[] b, int off, int len,ProtectionDomain protectionDomain)是java.lang.Classloader提供给开发人员，用来自定义加载class的接口。使用该接口，可以动态的加载class文件。例如在jdk中，URLClassLoader是配合findClass方法来使用defineClass，可以从网络或硬盘上加载class。而使用类加载接口，并加上自己的实现逻辑，还可以定制出更多的高级特性。</p>
+<p>下面是一个简单的hot swap类加载器实现。hot swap即热插拔的意思，这里表示一个类已经被一个加载器加载了以后，在不卸载它的情况下重新再加载它一次。我们知道Java缺省的加载器对相同全名的类只会加载一次，以后直接从缓存中取这个Class object。因此要实现hot swap，必须在加载的那一刻进行拦截，先判断是否已经加载，若是则重新加载一次，否则直接首次加载它。我们从URLClassLoader继承，加载类的过程都代理给系统类加载器URLClassLoader中的相应方法来完成。</p>
+<pre><code>package classloader;
+
+
+import java.net.URL;
+import java.net.URLClassLoader;
+
+
+/**
+ * 可以重新载入同名类的类加载器实现
+ * 放弃了双亲委派的加载链模式，需要外部维护重载后的类的成员变量状态
+ */
+public class HotSwapClassLoader extends URLClassLoader {
+
+
+    public HotSwapClassLoader(URL[] urls) {
+        super(urls);
+    }
+
+
+    public HotSwapClassLoader(URL[] urls, ClassLoader parent) {
+        super(urls, parent);
+    }
+
+
+    // 下面的两个重载load方法实现类的加载，仿照ClassLoader中的两个loadClass()
+    // 具体的加载过程代理给父类中的相应方法来完成
+    public Class&lt;?&gt; load(String name) throws ClassNotFoundException {
+        return load(name, false);
+    }
+
+
+    public Class&lt;?&gt; load(String name, boolean resolve) throws ClassNotFoundException {
+        // 若类已经被加载，则重新再加载一次
+        if (null != super.findLoadedClass(name)) {
+            return reload(name, resolve);
+        }
+        // 否则用findClass()首次加载它
+        Class&lt;?&gt; clazz = super.findClass(name);
+        if (resolve) {
+            super.resolveClass(clazz);
+        }
+        return clazz;
+    }
+
+
+    public Class&lt;?&gt; reload(String name, boolean resolve) throws ClassNotFoundException {
+        return new HotSwapClassLoader(super.getURLs(), super.getParent()).load(
+                name, resolve);
+    }
+}
+</code></pre><p>两个重载的load方法参数与ClassLoader类中的两个loadClass()相似。在load的实现中，用findLoadedClass()查找指定的类是否已经被祖先加载器加载了，若已加载则重新再加载一次，从而放弃了双亲委派的方式（这种方式只会加载一次）。若没有加载则用自身的findClass()来首次加载它。<br>下面是使用示例：</p>
+<pre><code>package classloader;
+
+
+public class A {
+
+    private B b;
+
+
+    public void setB(B b) {
+        this.b = b;
+    }
+
+
+    public B getB() {
+        return b;
+    }
+}
+</code></pre><p><br></p>
+<pre><code>package classloader;
+
+
+public class B {
+
+}
+</code></pre><p><br></p>
+<pre><code>package classloader;
+
+
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
+import java.net.MalformedURLException;
+import java.net.URL;
+
+
+public class TestHotSwap {
+
+
+    public static void main(String args[]) throws MalformedURLException {
+        A a = new A();  // 加载类A
+        B b = new B();  // 加载类B
+        a.setB(b);  // A引用了B，把b对象拷贝到A.b
+        System.out.printf(&quot;A classLoader is %s\n&quot;, a.getClass().getClassLoader());
+        System.out.printf(&quot;B classLoader is %s\n&quot;, b.getClass().getClassLoader());
+        System.out.printf(&quot;A.b classLoader is %s\n&quot;, a.getB().getClass().getClassLoader());
+
+
+        try {
+            URL[] urls = new URL[]{ new URL(&quot;file:///C:/Users/JackZhou/Documents/NetBeansProjects/classloader/build/classes/&quot;) };
+            HotSwapClassLoader c1 = new HotSwapClassLoader(urls, a.getClass().getClassLoader());
+            Class clazz = c1.load(&quot;classloader.A&quot;);  // 用hot swap重新加载类A
+            Object aInstance = clazz.newInstance();  // 创建A类对象
+            Method method1 = clazz.getMethod(&quot;setB&quot;, B.class);  // 获取setB(B b)方法
+            method1.invoke(aInstance, b);    // 调用setB(b)方法，重新把b对象拷贝到A.b
+            Method method2 = clazz.getMethod(&quot;getB&quot;);  // 获取getB()方法
+            Object bInstance = method2.invoke(aInstance);  // 调用getB()方法
+            System.out.printf(&quot;Reloaded A.b classLoader is %s\n&quot;, bInstance.getClass().getClassLoader());
+        } catch (MalformedURLException | ClassNotFoundException | 
+                InstantiationException | IllegalAccessException | 
+                NoSuchMethodException | SecurityException | 
+                IllegalArgumentException | InvocationTargetException e) {
+            e.printStackTrace();
+        }
+    }
+}
+</code></pre><p>运行输出：</p>
+<p><code>A classLoader is sun.misc.Launcher$AppClassLoader@73d16e93</code><br><code>B classLoader is sun.misc.Launcher$AppClassLoader@73d16e93</code><br><code>A.b classLoader is sun.misc.Launcher$AppClassLoader@73d16e93</code><br><code>Reloaded A.b classLoader is sun.misc.Launcher$AppClassLoader@73d16e93</code>  </p>
+<p>HotSwapClassLoader加载器的作用是重新加载同名的类。为了实现hot swap，一个类在加载过后，若重新再加载一次，则新的Class object的状态会改变，老的状态数据需要通过其他方式拷贝到重新加载过的类生成的全新Class object实例中来。上面A类引用了B类，加载A时也会加载B（如果B已经加载，则直接从缓存中取出）。在重新加载A后，其Class object中的成员b会重置，因此要重新调用setB(b)拷贝一次。你可以注释掉这行代码，再运行会抛出java.lang.NullPointerException，指示A.b为null。</p>
+<p>注意新的A Class object实例所依赖的B类Class object，如果它与老的B Class object实例不是同一个类加载器加载的， 将会抛出类型转换异常(ClassCastException)，表示两种不同的类。因此在重新加载A后，要特别注意给它的B类成员b传入外部值时，它们是否由同一个类加载器加载。为了解决这种问题， HotSwapClassLoader自定义的l/oad方法中，当前类（类A）是由自身classLoader加载的， 而内部依赖的类（类B）还是老对象的classLoader加载的。</p>
+<h1 id="二、何时使用"><a href="#二、何时使用" class="headerlink" title="二、何时使用?"></a>二、何时使用?</h1><p>这是一个很常见的问题，但答案却很难回答。这个问题通常在需要动态加载类和资源的系统编程时会遇到。总的说来动态加载资源时，往往需要从三种类加载器里选择：系统或程序的类加载器、当前类加载器、以及当前线程的上下文类加载器。在程序中应该使用何种类加载器呢？</p>
+<p>系统类加载器通常不会使用。此类加载器处理启动应用程序时classpath指定的类，可以通过ClassLoader.getSystemClassLoader()来获得。所有的ClassLoader.getSystemXXX()接口也是通过这个类加载器加载的。一般不要显式调用这些方法，应该让其他类加载器代理到系统类加载器上。由于系统类加载器是JVM最后创建的类加载器，这样代码只会适应于简单命令行启动的程序。一旦代码移植到EJB、Web应用或者Java Web Start应用程序中，程序肯定不能正确执行。</p>
+<p>因此一般只有两种选择，当前类加载器和线程上下文类加载器。当前类加载器是指当前方法所在类的加载器。这个类加载器是运行时类解析使用的加载器，Class.forName(String)和Class.getResource(String)也使用该类加载器。代码中X.class的写法使用的类加载器也是这个类加载器。</p>
+<p>线程上下文类加载器在Java 2(J2SE)时引入。每个线程都有一个关联的上下文类加载器。如果你使用new Thread()方式生成新的线程，新线程将继承其父线程的上下文类加载器。如果程序对线程上下文类加载器没有任何改动的话，程序中所有的线程将都使用系统类加载器作为上下文类加载器。Web应用和Java企业级应用中，应用服务器经常要使用复杂的类加载器结构来实现JNDI（Java命名和目录接口)、线程池、组件热部署等功能，因此理解这一点尤其重要。</p>
+<p>为什么要引入线程的上下文类加载器？将它引入J2SE并不是纯粹的噱头，由于Sun没有提供充分的文档解释说明这一点，这使许多开发者很糊涂。实际上，上下文类加载器为同样在J2SE中引入的类加载代理机制提供了后门。通常JVM中的类加载器是按照层次结构组织的，目的是每个类加载器（除了启动整个JVM的原初类加载器）都有一个父类加载器。当类加载请求到来时，类加载器通常首先将请求代理给父类加载器。只有当父类加载器失败后，它才试图按照自己的算法查找并定义当前类。</p>
+<p>有时这种模式并不能总是奏效。这通常发生在JVM核心代码必须动态加载由应用程序动态提供的资源时。拿JNDI为例，它的核心是由JRE核心类(rt.jar)实现的。但这些核心JNDI类必须能加载由第三方厂商提供的JNDI实现。这种情况下调用父类加载器（原初类加载器）来加载只有其子类加载器可见的类，这种代理机制就会失效。解决办法就是让核心JNDI类使用线程上下文类加载器，从而有效的打通类加载器层次结构，逆着代理机制的方向使用类加载器。</p>
+<p>顺便提一下，XML解析API(JAXP)也是使用此种机制。当JAXP还是J2SE扩展时，XML解析器使用当前类加载器方法来加载解析器实现。但当JAXP成为J2SE核心代码后，类加载机制就换成了使用线程上下文加载器，这和JNDI的原因相似。</p>
+<p>好了，现在我们明白了问题的关键：这两种选择不可能适应所有情况。一些人认为线程上下文类加载器应成为新的标准。但这在不同JVM线程共享数据来沟通时，就会使类加载器的结构乱七八糟。除非所有线程都使用同一个上下文类加载器。而且，使用当前类加载器已成为缺省规则，它们广泛应用在类声明、Class.forName等情景中。即使你想尽可能只使用上下文类加载器，总是有这样那样的代码不是你所能控制的。这些代码都使用代理到当前类加载器的模式。混杂使用代理模式是很危险的。</p>
+<p>更为糟糕的是，某些应用服务器将当前类加载器和上下文类加器分别设置成不同的ClassLoader实例。虽然它们拥有相同的类路径，但是它们之间并不存在父子代理关系。想想这为什么可怕：记住加载并定义某个类的类加载器是虚拟机内部标识该类的组成部分，如果当前类加载器加载类X并接着执行它，如JNDI查找类型为Y的数据，上下文类加载器能够加载并定义Y，这个Y的定义和当前类加载器加载的相同名称的类就不是同一个，使用隐式类型转换就会造成异常。</p>
+<p>这种混乱的状况还将在Java中存在很长时间。在J2SE中还包括以下的功能使用不同的类加载器：</p>
+<ul>
+<li>JNDI使用线程上下文类加载器。</li>
+<li>Class.getResource()和Class.forName()使用当前类加载器。</li>
+<li>JAXP使用上下文类加载器。</li>
+<li>java.util.ResourceBundle使用调用者的当前类加载器。</li>
+<li>URL协议处理器使用java.protocol.handler.pkgs系统属性并只使用系统类加载器。</li>
+<li>Java序列化API缺省使用调用者当前的类加载器。</li>
+</ul>
+<p>这些类加载器非常混乱，没有在J2SE文档中给以清晰明确的说明。<br>　　<br><strong> 该如何选择类加载器？</strong></p>
+<p>如若代码是限于某些特定框架，这些框架有着特定加载规则，则不要做任何改动，让框架开发者来保证其工作（比如应用服务器提供商，尽管他们并不能总是做对）。如在Web应用和EJB中，要使用Class.gerResource来加载资源。</p>
+<p>在其他情况下，我们可以自己来选择最合适的类加载器。可以使用策略模式来设计选择机制。其思想是将“总是使用上下文类加载器”或者“总是使用当前类加载器”的决策同具体实现逻辑分离开。往往设计之初是很难预测何种类加载策略是合适的，该设计能够让你可以后来修改类加载策略。</p>
+<p>考虑使用下面的代码，这是作者本人在工作中发现的经验。这儿有一个缺省实现，应该可以适应大部分工作场景：</p>
+<pre><code>package classloader.context;
+
+
+/**
+ * 类加载上下文，持有要加载的类
+ */
+public class ClassLoadContext {
+
+
+    private final Class m_caller;
+
+
+    public final Class getCallerClass() {
+        return m_caller;
+    }
+
+
+    ClassLoadContext(final Class caller) {
+        m_caller = caller;
+    }
+}
+</code></pre><p><br></p>
+<pre><code>package classloader.context;
+
+
+/**
+ * 类加载策略接口
+ */
+public interface IClassLoadStrategy {
+
+
+    ClassLoader getClassLoader(ClassLoadContext ctx);
+}
+/**
+ * 缺省的类加载策略，可以适应大部分工作场景
+ */
+public class DefaultClassLoadStrategy implements IClassLoadStrategy {
+
+
+    /**
+     * 为ctx返回最合适的类加载器，从系统类加载器、当前类加载器
+     * 和当前线程上下文类加载中选择一个最底层的加载器
+     * @param ctx
+     * @return 
+     */
+    @Override
+    public ClassLoader getClassLoader(final ClassLoadContext ctx) {
+        final ClassLoader callerLoader = ctx.getCallerClass().getClassLoader();
+        final ClassLoader contextLoader = Thread.currentThread().getContextClassLoader();
+        ClassLoader result;
+
+
+        // If &#39;callerLoader&#39; and &#39;contextLoader&#39; are in a parent-child
+        // relationship, always choose the child:
+        if (isChild(contextLoader, callerLoader)) {
+            result = callerLoader;
+        } else if (isChild(callerLoader, contextLoader)) {
+            result = contextLoader;
+        } else {
+            // This else branch could be merged into the previous one,
+            // but I show it here to emphasize the ambiguous case:
+            result = contextLoader;
+        }
+        final ClassLoader systemLoader = ClassLoader.getSystemClassLoader();
+        // Precaution for when deployed as a bootstrap or extension class:
+        if (isChild(result, systemLoader)) {
+            result = systemLoader;
+        }
+
+        return result;
+    }
+
+    // 判断anotherLoader是否是oneLoader的child
+    private boolean isChild(ClassLoader oneLoader, ClassLoader anotherLoader){
+        //...
+    }
+
+
+    // ... more methods 
+}
+</code></pre><p>决定应该使用何种类加载器的接口是IClassLoaderStrategy，为了帮助IClassLoadStrategy做决定，给它传递了个ClassLoadContext对象作为参数。ClassLoadContext持有要加载的类。</p>
+<p>上面代码的逻辑很简单：如调用类的当前类加载器和上下文类加载器是父子关系，则总是选择子类加载器。对子类加载器可见的资源通常是对父类可见资源的超集，因此如果每个开发者都遵循J2SE的代理规则，这样做大多数情况下是合适的。</p>
+<p>当前类加载器和上下文类加载器是兄弟关系时，决定使用哪一个是比较困难的。理想情况下，Java运行时不应产生这种模糊。但一旦发生，上面代码选择上下文类加载器。这是作者本人的实际经验，绝大多数情况下应该能正常工作。你可以修改这部分代码来适应具体需要。一般来说，上下文类加载器要比当前类加载器更适合于框架编程，而当前类加载器则更适合于业务逻辑编程。</p>
+<p>最后需要检查一下，以便保证所选类加载器不是系统类加载器的父亲，在开发标准扩展类库时这通常是个好习惯。<br>注意作者故意没有检查要加载资源或类的名称。Java XML API成为J2SE核心的历程应该能让我们清楚过滤类名并不是好想法。作者也没有试图检查哪个类加载器加载首先成功，而是检查类加载器的父子关系，这是更好更有保证的方法。</p>
+<p>下面是类加载器的选择器：</p>
+<pre><code>package classloader.context;
+
+
+/**
+ * 类加载解析器，获取最合适的类加载器
+ */
+public abstract class ClassLoaderResolver {
+
+    private static IClassLoadStrategy s_strategy;  // initialized in &lt;clinit&gt;
+    private static final int CALL_CONTEXT_OFFSET = 3;  // may need to change if this class is redesigned
+    private static final CallerResolver CALLER_RESOLVER;  // set in &lt;clinit&gt;
+
+    static {
+        try {
+            // This can fail if the current SecurityManager does not allow
+            // RuntimePermission (&quot;createSecurityManager&quot;):
+            CALLER_RESOLVER = new CallerResolver();
+        } catch (SecurityException se) {
+            throw new RuntimeException(&quot;ClassLoaderResolver: could not create CallerResolver: &quot; + se);
+        }
+        s_strategy = new DefaultClassLoadStrategy();  //默认使用缺省加载策略
+    }
+
+
+    /**
+     * This method selects the best classloader instance to be used for
+     * class/resource loading by whoever calls this method. The decision
+     * typically involves choosing between the caller&#39;s current, thread context,
+     * system, and other classloaders in the JVM and is made by the {@link IClassLoadStrategy}
+     * instance established by the last call to {@link #setStrategy}.
+     * 
+     * @return classloader to be used by the caller [&#39;null&#39; indicates the
+     * primordial loader]
+     */
+    public static synchronized ClassLoader getClassLoader() {
+        final Class caller = getCallerClass(0); // 获取执行当前方法的类
+        final ClassLoadContext ctx = new ClassLoadContext(caller);  // 创建类加载上下文
+        return s_strategy.getClassLoader(ctx);  // 获取最合适的类加载器
+    }
+
+
+    public static synchronized IClassLoadStrategy getStrategy() {
+        return s_strategy;
+    }
+
+
+    public static synchronized IClassLoadStrategy setStrategy(final IClassLoadStrategy strategy) {
+        final IClassLoadStrategy old = s_strategy;  // 设置类加载策略
+        s_strategy = strategy;
+        return old;
+    }
+
+
+    /**
+     * A helper class to get the call context. It subclasses SecurityManager
+     * to make getClassContext() accessible. An instance of CallerResolver
+     * only needs to be created, not installed as an actual security manager.
+     */
+    private static final class CallerResolver extends SecurityManager {
+        @Override
+        protected Class[] getClassContext() {
+            return super.getClassContext();  // 获取当执行栈的所有类，native方法
+        }
+
+
+    }
+
+
+    /*
+     * Indexes into the current method call context with a given
+     * offset.
+     */
+    private static Class getCallerClass(final int callerOffset) {
+        return CALLER_RESOLVER.getClassContext()[CALL_CONTEXT_OFFSET
+                + callerOffset];  // 获取执行栈上某个方法所属的类
+    }
+}
+</code></pre><p>可通过调用ClassLoaderResolver.getClassLoader()方法来获取类加载器对象，并使用其ClassLoader的接口如loadClass()等来加载类和资源。此外还可使用下面的ResourceLoader接口来取代ClassLoader接口：</p>
+<pre><code>package classloader.context;
+
+
+import java.net.URL;
+
+
+public class ResourceLoader {
+
+
+    /**
+     * 加载一个类
+     * 
+     * @param name
+     * @return 
+     * @throws java.lang.ClassNotFoundException 
+     * @see java.lang.ClassLoader#loadClass(java.lang.String)
+     */
+    public static Class&lt;?&gt; loadClass(final String name) throws ClassNotFoundException {
+        //获取最合适的类加载器
+        final ClassLoader loader = ClassLoaderResolver.getClassLoader();
+        //用指定加载器加载类
+        return Class.forName(name, false, loader);
+    }
+
+
+    /**
+     * 加载一个资源
+     * 
+     * @param name
+     * @return 
+     * @see java.lang.ClassLoader#getResource(java.lang.String)
+     */
+    public static URL getResource(final String name) {
+        //获取最合适的类加载器
+        final ClassLoader loader = ClassLoaderResolver.getClassLoader();
+        //查找指定的资源
+        if (loader != null) {
+            return loader.getResource(name);
+        } else {
+            return ClassLoader.getSystemResource(name);
+        }
+    }
+
+
+    // ... more methods ...
+}
+</code></pre><p>ClassLoadContext.getCallerClass()返回的类在ClassLoaderResolver或ResourceLoader使用，这样做的目的是让其能找到调用类的类加载器（上下文加载器总是能通过Thread.currentThread().getContextClassLoader()来获得）。注意调用类是静态获得的，因此这个接口不需现有业务方法增加额外的Class参数，而且也适合于静态方法和类初始化代码。具体使用时，可以往这个上下文对象中添加具体部署环境中所需的其他属性。</p>
+<h1 id="三、类加载器与Web容器"><a href="#三、类加载器与Web容器" class="headerlink" title="三、类加载器与Web容器"></a>三、类加载器与Web容器</h1><p>对于运行在 Java EE容器中的 Web 应用来说，类加载器的实现方式与一般的 Java 应用有所不同。不同的 Web 容器的实现方式也会有所不同。以 Apache Tomcat 来说，每个 Web 应用都有一个对应的类加载器实例。该类加载器也使用代理模式，所不同的是它是首先尝试去加载某个类，如果找不到再代理给父类加载器。这与一般类加载器的顺序是相反的。这是 Java Servlet 规范中的推荐做法，其目的是使得 Web 应用自己的类的优先级高于 Web 容器提供的类。这种代理模式的一个例外是：Java 核心库的类是不在查找范围之内的。这也是为了保证 Java 核心库的类型安全。</p>
+<p>绝大多数情况下，Web 应用的开发人员不需要考虑与类加载器相关的细节。下面给出几条简单的原则：</p>
+<ul>
+<li>每个 Web 应用自己的 Java 类文件和使用的库的 jar 包，分别放在 WEB-INF/classes和 WEB-INF/lib目录下面。</li>
+<li>多个应用共享的 Java 类文件和 jar 包，分别放在 Web 容器指定的由所有 Web 应用共享的目录下面。</li>
+<li>当出现找不到类的错误时，检查当前类的类加载器和当前线程的上下文类加载器是否正确。</li>
+</ul>
+<h1 id="四、类加载器与OSGi"><a href="#四、类加载器与OSGi" class="headerlink" title="四、类加载器与OSGi"></a>四、类加载器与OSGi</h1><p>OSGi是 Java 上的动态模块系统。它为开发人员提供了面向服务和基于组件的运行环境，并提供标准的方式用来管理软件的生命周期。OSGi 已经被实现和部署在很多产品上，在开源社区也得到了广泛的支持。Eclipse就是基于OSGi 技术来构建的。</p>
+<p>OSGi 中的每个模块（bundle）都包含 Java 包和类。模块可以声明它所依赖的需要导入（import）的其它模块的 Java 包和类（通过 Import-Package），也可以声明导出（export）自己的包和类，供其它模块使用（通过 Export-Package）。也就是说需要能够隐藏和共享一个模块中的某些 Java 包和类。这是通过 OSGi 特有的类加载器机制来实现的。OSGi 中的每个模块都有对应的一个类加载器。它负责加载模块自己包含的 Java 包和类。当它需要加载 Java 核心库的类时（以 java开头的包和类），它会代理给父类加载器（通常是启动类加载器）来完成。当它需要加载所导入的 Java 类时，它会代理给导出此 Java 类的模块来完成加载。</p>
+<p>模块也可以显式的声明某些 Java 包和类，必须由父类加载器来加载。只需要设置系统属性 org.osgi.framework.bootdelegation的值即可。</p>
+<p>假设有两个模块 bundleA 和 bundleB，它们都有自己对应的类加载器 classLoaderA 和 classLoaderB。在 bundleA 中包含类 com.bundleA.Sample，并且该类被声明为导出的，也就是说可以被其它模块所使用的。bundleB 声明了导入 bundleA 提供的类 com.bundleA.Sample，并包含一个类 com.bundleB.NewSample继承自 com.bundleA.Sample。在 bundleB 启动的时候，其类加载器 classLoaderB 需要加载类 com.bundleB.NewSample，进而需要加载类 com.bundleA.Sample。由于 bundleB 声明了类 com.bundleA.Sample是导入的，classLoaderB 把加载类 com.bundleA.Sample的工作代理给导出该类的 bundleA 的类加载器 classLoaderA。classLoaderA 在其模块内部查找类 com.bundleA.Sample并定义它，所得到的类 com.bundleA.Sample实例就可以被所有声明导入了此类的模块使用。对于以 java开头的类，都是由父类加载器来加载的。如果声明了系统属性 org.osgi.framework.bootdelegation=com.example.core.*，那么对于包 com.example.core中的类，都是由父类加载器来完成的。</p>
+<p>OSGi 模块的这种类加载器结构，使得一个类的不同版本可以共存在 Java 虚拟机中，带来了很大的灵活性。不过它的这种不同，也会给开发人员带来一些麻烦，尤其当模块需要使用第三方提供的库的时候。下面提供几条比较好的建议：</p>
+<ul>
+<li>如果一个类库只有一个模块使用，把该类库的 jar 包放在模块中，在 Bundle-ClassPath中指明即可。</li>
+<li>如果一个类库被多个模块共用，可以为这个类库单独的创建一个模块，把其它模块需要用到的 Java 包声明为导出的。其它模块声明导入这些类。</li>
+<li>如果类库提供了 SPI 接口，并且利用线程上下文类加载器来加载 SPI 实现的 Java 类，有可能会找不到 Java 类。如果出现了 NoClassDefFoundError异常，首先检查当前线程的上下文类加载器是否正确。通过 Thread.currentThread().getContextClassLoader()就可以得到该类加载器。该类加载器应该是该模块对应的类加载器。如果不是的话，可以首先通过 class.getClassLoader()来得到模块对应的类加载器，再通过 Thread.currentThread().setContextClassLoader()来设置当前线程的上下文类加载器。</li>
+</ul>
+<h1 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h1><p>类加载器是 Java 语言的一个创新。它使得动态安装和更新软件组件成为可能。本文详细介绍了类加载器的相关话题，包括基本概念、代理模式、线程上下文类加载器、与 Web 容器和 OSGi 的关系等。开发人员在遇到 ClassNotFoundException和 NoClassDefFoundError等异常的时候，应该检查抛出异常的类的类加载器和当前线程的上下文类加载器，从中可以发现问题的所在。在开发自己的类加载器的时候，需要注意与已有的类加载器组织结构的协调。</p>
+<h1 id="参考文献："><a href="#参考文献：" class="headerlink" title="参考文献："></a>参考文献：</h1><p><a href="https://www.ibm.com/developerworks/cn/java/j-lo-classloader/" target="_blank" rel="noopener">https://www.ibm.com/developerworks/cn/java/j-lo-classloader/</a></p>
+<p><a href="http://www.blogjava.net/lihao336/archive/2009/09/17/295489.html" target="_blank" rel="noopener">http://www.blogjava.net/lihao336/archive/2009/09/17/295489.html</a></p>
+<p><a href="http://kenwublog.com/structure-of-java-class-loader" target="_blank" rel="noopener">http://kenwublog.com/structure-of-java-class-loader</a></p>
+
+        </div>
+        <!-- .entry-content -->
+        <div class="single-reward">
+          <div class="reward-open">赏
+            <div class="reward-main">
+              <ul class="reward-row">
+                <li class="alipay-code"><img src="https://cdn.jsdelivr.net/gh/pengjunlee/picture-warehouse/img/AliPayQR.jpg"></li>
+                <li class="wechat-code"><img src="https://cdn.jsdelivr.net/gh/pengjunlee/picture-warehouse/img/WeChanQR.jpg"></li>
+              </ul>
+            </div>
+          </div>
+        </div>
+        <div style="text-align:center; width: 100%" class="social-share share-mobile" data-disabled="diandian, tencent"></div>
+        <footer class="post-footer">
+          <div class="post-lincenses"><a href="https://creativecommons.org/licenses/by-nc-sa/4.0/deed.zh" target="_blank" rel="nofollow"><i class="fa fa-creative-commons" aria-hidden="true"></i> 知识共享署名-非商业性使用-相同方式共享 4.0 国际许可协议</a></div>
+          <div class="post-tags">
+          </div>
+          <div class="post-share">
+            <div class="social-share sharehidden share-component"></div>
+            <i class="iconfont show-share icon-forward"></i>
+          </div>
+        </footer><!-- .entry-footer -->
+      </article>
+      <!-- #post-## -->
+      <div class="toc" style="background: none;"></div>
+      <section class="post-squares nextprev">
+        
+          
+            <div class="post-nepre half previous">
+          
+            <a href="/2020/05/31/SpringCloud之--CAP定理/" rel="prev">
+              <div class="background">
+                <img class="lazyload" src="https://cdn.jsdelivr.net/gh/pengjunlee/picture-warehouse/img/orange.progress-bar-stripe-loader.svg" data-src="https://cdn.jsdelivr.net/gh/pengjunlee/picture-warehouse/springcloud/sc1.png" style="width: 100%; height: 100%; object-fit: cover; pointer-events: none;" onerror="imgError(this,3)" src="https://cdn.jsdelivr.net/gh/pengjunlee/picture-warehouse/springcloud/sc1.png">
+              </div>
+              <span class="label">
+              Previous Post</span>
+              <div class="info">
+                <h3>
+                SpringCloud系列之--CAP定理</h3>
+                <hr>
+              </div>
+            </a>
+          </div>
+        
+        
+          
+            <div class="post-nepre half next">
+          
+            <a href="/2020/05/30/深入理解JVM之--Java类加载原理解析/" rel="next">
+              <div class="background">
+                <img class="lazyload" src="https://cdn.jsdelivr.net/gh/pengjunlee/picture-warehouse/img/orange.progress-bar-stripe-loader.svg" data-src="https://cdn.jsdelivr.net/gh/pengjunlee/picture-warehouse/java-jvm/jvm10.png" style="width: 100%; height: 100%; object-fit: cover; pointer-events: none;" onerror="imgError(this,3)" src="https://cdn.jsdelivr.net/gh/pengjunlee/picture-warehouse/java-jvm/jvm10.png">
+              </div>
+              <span class="label">
+              Next Post</span>
+              <div class="info">
+                <h3>
+                深入理解JVM系列之--Java类加载原理解析</h3>
+                <hr>
+              </div>
+            </a>
+          </div>
+        
+      </section>
+      
+<div id="vcomments"></div>
+<script>
+  window.onload = function(){
+      var valine = new Valine();
+      valine.init({
+        el: '#vcomments',
+        appId: "k0QcRvFFw7AovKS8un6pys2S-gzGzoHsz",
+        appKey: "Y5w42nyHhdKlYHT00svHuIya",
+        path: window.location.pathname,
+        placeholder: "你是我一生只会遇见一次的惊喜 ..."
+      })
+  }
+</script>
+
+      <section class="author-profile">
+        <div class="info" itemprop="author" itemscope="" itemtype="https://schema.org/Person">
+          <a href="pengjunlee" class="profile gravatar"><img src="https://cdn.jsdelivr.net/gh/pengjunlee/picture-warehouse/img/logo.jpg" itemprop="image" alt="李朋军" height="70" width="70"></a>
+          <div class="meta">
+            <span class="title">Author</span>
+            <h3 itemprop="name">
+            <a href="pengjunlee" itemprop="url" rel="author">李朋军</a>
+            </h3>
+          </div>
+        </div>
+        <hr>
+        <p><i class="iconfont icon-write"></i>为他人带来阳光的人，自己也一定会沐浴在阳光下。</p>
+      </section>
+    </main><!-- #main -->
+  </div><!-- #primary -->
+</div>
+
+
+
+    </div>    
+    <div class="ins-search">
+    <div class="ins-search-mask"></div>
+    <div class="ins-search-container">
+        <div class="ins-input-wrapper">
+            <input type="text" class="ins-search-input" placeholder="请输入关键词..."/>
+            <span class="ins-close ins-selectable"><i class="fa fa-times-circle"></i></span>
+        </div>
+        <div class="ins-section-wrapper">
+            <div class="ins-section-container"></div>
+        </div>
+    </div>
+</div>
+<script>
+(function (window) {
+    var INSIGHT_CONFIG = {
+        TRANSLATION: {
+            POSTS: '文章',
+            // PAGES: '页面',
+            CATEGORIES: '分类',
+            TAGS: '标签',
+        },
+        ROOT_URL: '/',
+        CONTENT_URL: '/content.json',
+    };
+    window.INSIGHT_CONFIG = INSIGHT_CONFIG;
+})(window);
+</script>
+    <!-- <footer id="footer">
+  
+  <div class="outer">
+    <div id="footer-info" class="inner">
+      &copy; 2023 pengjunlee<br>
+      powered_by <a href="http://hexo.io/" target="_blank">Hexo</a>
+    </div>
+  </div>
+</footer> -->
+<footer id="colophon" class="site-footer" role="contentinfo">
+  <div class="site-info">
+    <div class="footertext">
+      <div class="img-preload">
+        <img src="https://cdn.jsdelivr.net/gh/honjun/cdn@1.6/img/other/wordpress-rotating-ball-o.svg">
+        <img src="https://cdn.jsdelivr.net/gh/honjun/cdn@1.6/img/other/disqus-preloader.svg">
+      </div>
+      <p style="color: #666666;">&copy 2018</p>
+    </div>
+    <div class="footer-device">
+    <p style="font-family: 'Ubuntu', sans-serif;">
+        <span style="color: #b9b9b9;">Theme <a href="https://github.com/honjun/hexo-theme-sakura" target="_blank" style="color: #b9b9b9;;text-decoration: underline dotted rgba(0, 0, 0, .1);">Sakura</a> <i class="iconfont icon-sakura rotating" style="color: #ffc0cb;display:inline-block"></i> by <a href="https://2heng.xin/" target="_blank" style="color: #b9b9b9;;text-decoration: underline dotted rgba(0, 0, 0, .1);">Mashiro</a>&<a href="https://www.hojun.cn/" target="_blank" style="color: #b9b9b9;;text-decoration: underline dotted rgba(0, 0, 0, .1);">Hojun</a>, Powered by Hexo, Hosted by Coding Pages</a>
+        </span>
+      </p>
+    </div>
+  </div><!-- .site-info -->
+</footer>
+
+
+
+<!-- <script src="/js/tocbot.js"></script> -->
+<script type="text/javascript" src="/js/lib.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/clipboard@2/dist/clipboard.min.js"></script>
+<script type="text/javascript" src="/js/InsightSearch.js"></script>
+<script type="text/javascript" src="/js/jquery.fancybox.min.js"></script>
+<script type="text/javascript" src="/js/zoom.min.js"></script>
+<script type="text/javascript" src="/js/sakura-app.js"></script>
+<script src="//cdn1.lncld.net/static/js/3.0.4/av-min.js"></script>
+<script src='//unpkg.com/valine@1.3.4/dist/Valine.min.js'></script>
+<script src="/js/botui.js"></script>
+<!-- 不蒜子 网页计数器 -->
+<script src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+<!-- <script src="https://cdnjs.cloudflare.com/ajax/libs/tocbot/4.4.2/tocbot.min.js"></script> -->
+<script type="text/javascript">
+/* <![CDATA[ */
+if (/Android|webOS|iPhone|iPod|BlackBerry/i.test(navigator.userAgent)) {
+  var Poi = {"pjax":"1","movies":{"url": "https://cdn.jsdelivr.net/gh/pengjunlee/picture-warehouse/img","name":"Unbroken.mp4","live":"close"},"windowheight":"fixed","codelamp":"close","ajaxurl":"","order":"asc","formpostion":"bottom"};
+} else {
+  var Poi = {"pjax":"1","movies":{"url": "https://cdn.jsdelivr.net/gh/pengjunlee/picture-warehouse/img","name":"Unbroken.mp4","live":"open"},"windowheight":"auto","codelamp":"close","ajaxurl":"","order":"asc","formpostion":"bottom"};
+}
+/* ]]> */
+
+</script>
+<script>
+$(document).ready(function() {
+  if ($(".toc").length > 0 && document.body.clientWidth > 1200) {
+    if ($(".pattern-center").length > 0) { //有图的情况
+      tocbot.init({
+          // Where to render the table of contents.
+          tocSelector: '.toc', // 放置目录的容器
+          // Where to grab the headings to build the table of contents.
+          contentSelector: '.entry-content', // 正文内容所在
+          // Which headings to grab inside of the contentSelector element.
+          scrollSmooth: true,
+          headingSelector: 'h1, h2, h3, h4, h5', // 需要索引的标题级别
+          headingsOffset: -400,
+          scrollSmoothOffset: -85
+      });
+    } else {
+      tocbot.init({
+          // Where to render the table of contents.
+          tocSelector: '.toc', // 放置目录的容器
+          // Where to grab the headings to build the table of contents.
+          contentSelector: '.entry-content', // 正文内容所在
+          // Which headings to grab inside of the contentSelector element.
+          scrollSmooth: true,
+          headingSelector: 'h1, h2, h3, h4, h5', // 需要索引的标题级别
+          headingsOffset: -85,
+          scrollSmoothOffset: -85
+      });
+    }
+    var offsetTop = $('.toc').offset().top - 95;
+    window.onscroll = function() {
+      var scrollTop = window.pageYOffset || document.documentElement.scrollTop || document.body.scrollTop;
+      if (scrollTop >= offsetTop) {
+        $('.toc').addClass('toc-fixed');
+      } else {
+        $('.toc').removeClass('toc-fixed');
+      }
+    }
+  }
+});
+</script>
+
+    <div class="openNav no-select" style="height: 50px;">
+      <div class="iconflat no-select" style="width: 50px; height: 50px;">
+        <div class="icon"></div>
+      </div>
+      <div class="site-branding search-form-submit">
+        <i class="iconfont js-toggle-search iconsearch icon-search"></i>
+      </div>
+    </div>
+  </section>
+  <div id="mo-nav" class="">
+  <div class="m-avatar">
+    <img src="https://cdn.jsdelivr.net/gh/pengjunlee/picture-warehouse/img/avatar.jpg">
+  </div>
+  <p style="text-align: center; color: #333; font-weight: 900; font-family: 'Ubuntu', sans-serif; letter-spacing: 1.5px">李朋军</p>
+  <p style="text-align: center; word-spacing: 20px;">
+    
+      
+        <a href="http://github.com/honjun" class="fa fa-github" target="_blank" style="color: #333; margin-left:20px"></a>
+      
+        <a href="http://weibo.com/mashirozx?is_all=1" class="fa fa-weibo" target="_blank" style="color: #dd4b39; margin-left:20px"></a>
+      
+        <a href="https://wpa.qq.com/msgrd?v=3&uin=954655431&site=qq&menu=yes" class="fa fa-qq" target="_blank" style="color: #25c6fe; margin-left:20px"></a>
+      
+    
+  </p>
+  <ul id="menu-new-1" class="menu">
+    
+      <li>
+        <a href="/">
+          <span class="faa-parent animated-hover">
+            <i class="fa  fa-fort-awesome faa-shake" aria-hidden="true"></i>
+            首页
+          </span>
+        </a>
+        
+      </li>
+    
+      <li>
+        <a href="/archives">
+          <span class="faa-parent animated-hover">
+            <i class="fa  fa-archive faa-shake" aria-hidden="true"></i>
+            归档
+          </span>
+        </a>
+        
+          <ul class="sub-menu">
+            
+              <li>
+                <a href="/categories/编程/">
+                  <i class="fa fa-code" aria-hidden="true"></i>
+                  编程
+                </a>
+              </li>
+            
+              <li>
+                <a href="/categories/技术/">
+                  <i class="fa fa-cogs" aria-hidden="true"></i>
+                  技术
+                </a>
+              </li>
+            
+              <li>
+                <a href="/categories/生活/">
+                  <i class="fa fa-file-text-o" aria-hidden="true"></i>
+                  生活
+                </a>
+              </li>
+            
+              <li>
+                <a href="/categories/资源/">
+                  <i class="fa fa-cloud-download" aria-hidden="true"></i>
+                  资源
+                </a>
+              </li>
+            
+              <li>
+                <a href="/categories/随想/">
+                  <i class="fa fa-commenting-o" aria-hidden="true"></i>
+                  随想
+                </a>
+              </li>
+            
+              <li>
+                <a href="/categories/转载/">
+                  <i class="fa fa-book" aria-hidden="true"></i>
+                  转载
+                </a>
+              </li>
+            
+          </ul>
+        
+      </li>
+    
+      <li>
+        <a href="javascript:;">
+          <span class="faa-parent animated-hover">
+            <i class="fa  fa-list-ul faa-vertical" aria-hidden="true"></i>
+            清单
+          </span>
+        </a>
+        
+          <ul class="sub-menu">
+            
+              <li>
+                <a href="/tags/悦读/">
+                  <i class="fa fa-th-list faa-bounce" aria-hidden="true"></i>
+                  书单
+                </a>
+              </li>
+            
+              <li>
+                <a href="/bangumi/">
+                  <i class="fa fa-film faa-vertical" aria-hidden="true"></i>
+                  番组
+                </a>
+              </li>
+            
+              <li>
+                <a href="/music/">
+                  <i class="fa fa-headphones" aria-hidden="true"></i>
+                  歌单
+                </a>
+              </li>
+            
+              <li>
+                <a href="/tags/图集/">
+                  <i class="fa fa-photo" aria-hidden="true"></i>
+                  图集
+                </a>
+              </li>
+            
+          </ul>
+        
+      </li>
+    
+      <li>
+        <a href="/comment/">
+          <span class="faa-parent animated-hover">
+            <i class="fa  fa-pencil-square-o faa-tada" aria-hidden="true"></i>
+            留言板
+          </span>
+        </a>
+        
+      </li>
+    
+      <li>
+        <a href="/links/">
+          <span class="faa-parent animated-hover">
+            <i class="fa  fa-link faa-shake" aria-hidden="true"></i>
+            友人帐
+          </span>
+        </a>
+        
+      </li>
+    
+      <li>
+        <a href="/donate/">
+          <span class="faa-parent animated-hover">
+            <i class="fa  fa-heart faa-pulse" aria-hidden="true"></i>
+            赞赏
+          </span>
+        </a>
+        
+      </li>
+    
+      <li>
+        <a href="/">
+          <span class="faa-parent animated-hover">
+            <i class="fa  fa-leaf faa-wrench" aria-hidden="true"></i>
+            关于
+          </span>
+        </a>
+        
+          <ul class="sub-menu">
+            
+              <li>
+                <a href="/about/">
+                  <i class="fa fa-meetup" aria-hidden="true"></i>
+                  我？
+                </a>
+              </li>
+            
+              <li>
+                <a href="/theme-sakura/">
+                  <i class="fa iconfont icon-sakura" aria-hidden="true"></i>
+                  主题
+                </a>
+              </li>
+            
+              <li>
+                <a href="/lab/">
+                  <i class="fa fa-cogs" aria-hidden="true"></i>
+                  Lab
+                </a>
+              </li>
+            
+          </ul>
+        
+      </li>
+    
+      <li>
+        <a href="/client/">
+          <span class="faa-parent animated-hover">
+            <i class="fa  fa-android faa-vertical" aria-hidden="true"></i>
+            客户端
+          </span>
+        </a>
+        
+      </li>
+    
+      <li>
+        <a href="/atom.xml">
+          <span class="faa-parent animated-hover">
+            <i class="fa  fa-rss faa-pulse" aria-hidden="true"></i>
+            RSS
+          </span>
+        </a>
+        
+      </li>
+    
+  </ul>
+  <p style="text-align: center; font-size: 13px; color: #b9b9b9;">&copy 2019 hexo-sakura</p>
+</div>
+<button onclick="topFunction()" class="mobile-cd-top" id="moblieGoTop" title="Go to top" style="display: none;"><i class="fa fa-chevron-up" aria-hidden="true"></i></button>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/aplayer/dist/APlayer.min.css">
+<script src="https://cdn.jsdelivr.net/npm/aplayer/dist/APlayer.min.js"></script>
+<!-- require MetingJS -->
+<script src="https://cdn.jsdelivr.net/npm/meting@2/dist/Meting.min.js"></script>
+<style>
+  .aplayer .aplayer-lrc {
+    height: 35px;
+  }
+  .aplayer .aplayer-lrc p{
+    font-size: 16px;
+    font-weight: 700;
+    line-height: 18px !important;
+  }
+  .aplayer .aplayer-lrc p.aplayer-lrc-current{
+    color: #FF1493;
+  }
+  .aplayer.aplayer-narrow .aplayer-body{
+    left: -66px !important;
+  }
+  .aplayer.aplayer-fixed .aplayer-lrc {
+    display: none;
+  }
+  .aplayer .aplayer-lrc.aplayer-lrc-hide {
+      display:none !important;
+  }
+  .aplayer.aplayer-fixed .lrc-show {
+    display: block;
+    background: rgba(255, 255, 255, 0.8);
+  }
+</style>
+<meting-js
+
+    id="2660651585"
+
+    server="netease"
+
+    type="playlist"
+
+    fixed="true"
+
+    autoplay="false"
+
+    loop="all"
+
+    order="random"
+
+    preload="auto"
+
+    volume="0.7"
+
+    mutex="true"
+
+</meting-js>
+<script>
+  $(function(){
+    $('body').on('click', '.aplayer', function(){
+      if($('.aplayer-button').hasClass('aplayer-play')) {
+        $('.aplayer-lrc').removeClass('lrc-show');
+      } else {
+        $('.aplayer-lrc').addClass('lrc-show');
+      }
+    })
+  });
+</script>
+</body>
+</html>

@@ -1,0 +1,1309 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head><meta name="generator" content="Hexo 3.9.0">
+  <meta charset="utf-8">
+  <meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0" name="viewport">
+  
+  <title itemprop="name">Java设计模式系列之--享元模式 | 李朋军的个人博客</title>
+  
+    <link rel="shortcut icon" href="/images/favicon.jpg">
+  
+  <meta http-equiv="x-dns-prefetch-control" content="on">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Noto+SerifMerriweather|Merriweather+Sans|Source+Code+Pro|Ubuntu:400,700|Noto+Serif+SC" media="all">
+  <link rel="dns-prefetch" href="//cdn.jsdelivr.net">
+  <link rel="stylesheet" id="saukra_css-css" href="/css/style.css" type="text/css" media="all">
+  <link rel="stylesheet" href="/css/lib.min.css" media="all">
+  <link rel="stylesheet" href="/css/font.css" media="all">
+  <link rel="stylesheet" href="/css/insight.css" media="all">
+  <link rel="stylesheet" href="/css/jquery.fancybox.min.css" media="all">
+  <link rel="stylesheet" href="/css/zoom.css" media="all">
+  <link rel="stylesheet" type="text/css" href="/css/sharejs.css">
+<!--   <link rel="stylesheet" id="saukra_css-css" href="https://2heng.xin/wp-content/cache/autoptimize/css/autoptimize_ad42a61f4c7d4bdd9f91afcff6b5dda5.css
+" type="text/css" media="all"> -->
+  <script>
+  /*Initial Variables*/
+  var mashiro_option = new Object();
+  var mashiro_global = new Object();
+  mashiro_option.NProgressON = true;
+  /* 
+   * 邮箱信息之类的东西可以填在这里，这些js变量基本都作用于sakura-app.js
+   * 这样的设置仅是为了方便在基于PHP开发的主题中设置js变量，既然移植到了Node上，我想或许可以精简这一逻辑吧
+   */
+  mashiro_option.email_domain = "";
+  mashiro_option.email_name = "";
+  mashiro_option.cookie_version_control = "";
+  mashiro_option.qzone_autocomplete = false;
+  mashiro_option.site_name = "李朋军";
+  mashiro_option.author_name = "朋军";
+  mashiro_option.site_url = "http://blog.mtracy.club/";
+  mashiro_option.v_appId = "k0QcRvFFw7AovKS8un6pys2S-gzGzoHsz";
+  mashiro_option.v_appKey = "Y5w42nyHhdKlYHT00svHuIya";
+  mashiro_option.mathjax = "0";
+  mashiro_option.qq_api_url = "https://api.mashiro.top/qqinfo/"; 
+  mashiro_option.qq_avatar_api_url = "https://api.mashiro.top/qqinfo/";
+
+  // mashiro_option.jsdelivr_css_src = "https://cdn.jsdelivr.net/gh/moezx/cdn@3.4.5/css/lib.min.css";
+  // mashiro_option.float_player_on = true;
+
+  /*End of Initial Variables*/
+  </script>
+  <script type="text/javascript">
+  var bg = "https://cdn.jsdelivr.net/gh/pengjunlee/picture-warehouse/img/(1).jpg.webp,https://cdn.jsdelivr.net/gh/pengjunlee/picture-warehouse/img/(2).jpg.webp,https://cdn.jsdelivr.net/gh/pengjunlee/picture-warehouse/img/(3).jpg.webp,https://cdn.jsdelivr.net/gh/pengjunlee/picture-warehouse/img/(4).jpg.webp,https://cdn.jsdelivr.net/gh/pengjunlee/picture-warehouse/img/(5).jpg.webp,https://cdn.jsdelivr.net/gh/pengjunlee/picture-warehouse/img/(6).jpg.webp,https://cdn.jsdelivr.net/gh/pengjunlee/picture-warehouse/img/(7).jpg.webp,https://cdn.jsdelivr.net/gh/pengjunlee/picture-warehouse/img/(8).jpg.webp".split(",");
+  var bgindex = Math.floor(Math.random()*bg.length);
+  if (!!window.ActiveXObject || "ActiveXObject" in window) { //is IE?
+    alert('朋友，IE浏览器未适配哦~');
+  }
+  </script>
+  <style type="text/css">
+  .hljs-ln{border-collapse:collapse}.hljs-ln td{padding:0}.hljs-ln-n:before{content:attr(data-line-number)}
+  </style>
+  <style type="text/css">.site-top .lower nav{display:block !important;}.author-profile i,.post-like a,.post-share .show-share,.sub-text,.we-info a,span.sitename,.post-more i:hover,#pagination a:hover,.post-content a:hover,.float-content i:hover{color:#FE9600}.feature i,.download,.navigator i:hover,.links ul li:before,.ar-time i,span.ar-circle,.object,.comment .comment-reply-link,.siren-checkbox-radio:checked + .siren-checkbox-radioInput:after{background:#FE9600}::-webkit-scrollbar-thumb{background:#FE9600}.download,.navigator i:hover,.link-title,.links ul li:hover,#pagination a:hover,.comment-respond input[type='submit']:hover{border-color:#FE9600}.entry-content a:hover,.site-info a:hover,.comment h4 a,#comments-navi a.prev,#comments-navi a.next,.comment h4 a:hover,.site-top ul li a:hover,.entry-title a:hover,#archives-temp h3,span.page-numbers.current,.sorry li a:hover,.site-title a:hover,i.iconfont.js-toggle-search.iconsearch:hover,.comment-respond input[type='submit']:hover{color:#FE9600}.comments .comments-main{display:block !important;}.comments .comments-hidden{display:none !important;}background-position:center center;background-attachment:inherit;}
+  </style>
+</head>
+</html>
+<body class="page-template page-template-user page-template-page-analytics page-template-userpage-analytics-php page page-id-1297 chinese-font serif isWebKit">
+  <div class="scrollbar" id="bar">
+  </div>
+  <a href="#" class="cd-top faa-float animated"></a>
+  <section id="main-container">
+    <div class="headertop filter-grid">
+  <div id="banner_wave_1"></div>
+  <div id="banner_wave_2"></div>
+  <figure id="centerbg" class="centerbg">
+    <div class="focusinfo no-select">
+      <div class="header-tou">
+        <a href="http://blog.mtracy.club/">
+          <img src="https://cdn.jsdelivr.net/gh/pengjunlee/picture-warehouse/img/avatar.jpg">
+        </a>
+      </div>
+      <div class="header-info">
+        <p>千帆退却，我向前；天涯尽头，是晴天!</p>
+        <div class="top-social_v2">
+          <li id="bg-pre">
+            <img class="flipx" src="https://cdn.jsdelivr.net/gh/honjun/cdn@1.6/img/other/next-b.svg">
+          </li>
+          
+            
+              
+                <li>
+                  <a href="http://github.com/honjun" target="_blank" class="social-github" title="github">
+                    <img src="https://cdn.jsdelivr.net/gh/pengjunlee/picture-warehouse/img/github.png">
+                  </a>
+                </li>
+              
+            
+              
+                <li>
+                  <a href="http://weibo.com/mashirozx?is_all=1" target="_blank" class="social-github" title="sina">
+                    <img src="https://cdn.jsdelivr.net/gh/pengjunlee/picture-warehouse/img/sina.png">
+                  </a>
+                </li>
+              
+            
+              
+                <li>
+                  <a href="http://weibo.com/mashirozx?is_all=1" target="_blank" class="social-github" title="wangyiyun">
+                    <img src="https://cdn.jsdelivr.net/gh/pengjunlee/picture-warehouse/img/wangyiyun.png">
+                  </a>
+                </li>
+              
+            
+              
+                <li>
+                  <a href="http://weibo.com/mashirozx?is_all=1" target="_blank" class="social-github" title="zhihu">
+                    <img src="https://cdn.jsdelivr.net/gh/pengjunlee/picture-warehouse/img/zhihu.png">
+                  </a>
+                </li>
+              
+            
+              
+                <li>
+                  <a href="http://weibo.com/mashirozx?is_all=1" target="_blank" class="social-github" title="email">
+                    <img src="https://cdn.jsdelivr.net/gh/pengjunlee/picture-warehouse/img/email.svg">
+                  </a>
+                </li>
+              
+            
+              
+                <li class="wechat">
+                  <a href="/#">
+                    <img src="https://cdn.jsdelivr.net/gh/pengjunlee/picture-warehouse/img/wechat.png">
+                  </a>
+                  <div class="wechatInner">
+                    <img src="https://cdn.jsdelivr.net/gh/pengjunlee/picture-warehouse/img/wechat.jpg">
+                  </div>
+                </li>
+              
+            
+              
+                <li class="wechat">
+                  <a href="/#">
+                    <img src="https://cdn.jsdelivr.net/gh/pengjunlee/picture-warehouse/img/wechat.png">
+                  </a>
+                  <div class="wechatInner">
+                    <img src="https://cdn.jsdelivr.net/gh/pengjunlee/picture-warehouse/img/wechat.jpg">
+                  </div>
+                </li>
+              
+            
+          
+          <li id="bg-next">
+            <img src="https://cdn.jsdelivr.net/gh/honjun/cdn@1.6/img/other/next-b.svg">
+          </li>
+        </div>
+      </div>
+    </div>
+  </figure>
+  <div id="video-container" style="">
+    <video style="object-fit: fill" id="bgvideo" class="video" video-name="" src="" width="auto" preload="auto">
+    </video>
+    <div id="video-btn" class="loadvideo videolive">
+    </div>
+    <div id="video-add">
+    </div>
+    <div class="video-stu">
+    </div>
+  </div>
+  <div class="headertop-down faa-float animated" onclick="headertop_down()">
+    <span>
+      <i class="fa fa-chevron-down" aria-hidden="true">
+      </i>
+    </span>
+  </div>
+</div>
+    <div id="page" class="site wrapper">
+      <header class="site-header no-select gizle sabit" role="banner">
+  <div class="site-top">
+    <div class="site-branding">
+      <span class="site-title">
+        <span class="logolink moe-mashiro">
+          <a href="/">
+            <span class="sakurasono">李</span>
+            <span class="shironeko">朋军</span>
+          </a>
+        </span>
+      </span>
+    </div>
+    <div class="searchbox search-form-submit">
+      <i class="iconfont js-toggle-search iconsearch icon-search">
+      </i>
+    </div>
+    <div id="show-nav" class="showNav mobile-fit">
+      <div class="line line1">
+      </div>
+      <div class="line line2">
+      </div>
+      <div class="line line3">
+      </div>
+    </div>
+    <div class="lower-cantiner">
+      <div class="lower">
+        <nav class="mobile-fit-control hide">
+          <ul id="menu-new" class="menu">
+            
+              <li>
+                <a href="/">
+                  <span class="faa-parent animated-hover">
+                    <i class="fa  fa-fort-awesome faa-shake" aria-hidden="true"></i>
+                    首页
+                  </span>
+                </a>
+                
+              </li>
+            
+              <li>
+                <a href="/archives">
+                  <span class="faa-parent animated-hover">
+                    <i class="fa  fa-archive faa-shake" aria-hidden="true"></i>
+                    归档
+                  </span>
+                </a>
+                
+                  <ul class="sub-menu">
+                    
+                      <li>
+                        <a href="/categories/编程/">
+                          <i class="fa fa-code" aria-hidden="true"></i>
+                          编程
+                        </a>
+                      </li>
+                    
+                      <li>
+                        <a href="/categories/技术/">
+                          <i class="fa fa-cogs" aria-hidden="true"></i>
+                          技术
+                        </a>
+                      </li>
+                    
+                      <li>
+                        <a href="/categories/生活/">
+                          <i class="fa fa-file-text-o" aria-hidden="true"></i>
+                          生活
+                        </a>
+                      </li>
+                    
+                      <li>
+                        <a href="/categories/资源/">
+                          <i class="fa fa-cloud-download" aria-hidden="true"></i>
+                          资源
+                        </a>
+                      </li>
+                    
+                      <li>
+                        <a href="/categories/随想/">
+                          <i class="fa fa-commenting-o" aria-hidden="true"></i>
+                          随想
+                        </a>
+                      </li>
+                    
+                      <li>
+                        <a href="/categories/转载/">
+                          <i class="fa fa-book" aria-hidden="true"></i>
+                          转载
+                        </a>
+                      </li>
+                    
+                  </ul>
+                
+              </li>
+            
+              <li>
+                <a href="javascript:;">
+                  <span class="faa-parent animated-hover">
+                    <i class="fa  fa-list-ul faa-vertical" aria-hidden="true"></i>
+                    清单
+                  </span>
+                </a>
+                
+                  <ul class="sub-menu">
+                    
+                      <li>
+                        <a href="/tags/悦读/">
+                          <i class="fa fa-th-list faa-bounce" aria-hidden="true"></i>
+                          书单
+                        </a>
+                      </li>
+                    
+                      <li>
+                        <a href="/bangumi/">
+                          <i class="fa fa-film faa-vertical" aria-hidden="true"></i>
+                          番组
+                        </a>
+                      </li>
+                    
+                      <li>
+                        <a href="/music/">
+                          <i class="fa fa-headphones" aria-hidden="true"></i>
+                          歌单
+                        </a>
+                      </li>
+                    
+                      <li>
+                        <a href="/tags/图集/">
+                          <i class="fa fa-photo" aria-hidden="true"></i>
+                          图集
+                        </a>
+                      </li>
+                    
+                  </ul>
+                
+              </li>
+            
+              <li>
+                <a href="/comment/">
+                  <span class="faa-parent animated-hover">
+                    <i class="fa  fa-pencil-square-o faa-tada" aria-hidden="true"></i>
+                    留言板
+                  </span>
+                </a>
+                
+              </li>
+            
+              <li>
+                <a href="/links/">
+                  <span class="faa-parent animated-hover">
+                    <i class="fa  fa-link faa-shake" aria-hidden="true"></i>
+                    友人帐
+                  </span>
+                </a>
+                
+              </li>
+            
+              <li>
+                <a href="/donate/">
+                  <span class="faa-parent animated-hover">
+                    <i class="fa  fa-heart faa-pulse" aria-hidden="true"></i>
+                    赞赏
+                  </span>
+                </a>
+                
+              </li>
+            
+              <li>
+                <a href="/">
+                  <span class="faa-parent animated-hover">
+                    <i class="fa  fa-leaf faa-wrench" aria-hidden="true"></i>
+                    关于
+                  </span>
+                </a>
+                
+                  <ul class="sub-menu">
+                    
+                      <li>
+                        <a href="/about/">
+                          <i class="fa fa-meetup" aria-hidden="true"></i>
+                          我？
+                        </a>
+                      </li>
+                    
+                      <li>
+                        <a href="/theme-sakura/">
+                          <i class="fa iconfont icon-sakura" aria-hidden="true"></i>
+                          主题
+                        </a>
+                      </li>
+                    
+                      <li>
+                        <a href="/lab/">
+                          <i class="fa fa-cogs" aria-hidden="true"></i>
+                          Lab
+                        </a>
+                      </li>
+                    
+                  </ul>
+                
+              </li>
+            
+              <li>
+                <a href="/client/">
+                  <span class="faa-parent animated-hover">
+                    <i class="fa  fa-android faa-vertical" aria-hidden="true"></i>
+                    客户端
+                  </span>
+                </a>
+                
+              </li>
+            
+              <li>
+                <a href="/atom.xml">
+                  <span class="faa-parent animated-hover">
+                    <i class="fa  fa-rss faa-pulse" aria-hidden="true"></i>
+                    RSS
+                  </span>
+                </a>
+                
+              </li>
+            
+          </ul>
+        </nav>
+      </div>
+    </div>
+  </div>
+</header>
+
+      <link rel="stylesheet" type="text/css" href="/css/sharejs.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/tocbot/4.4.2/tocbot.css">
+<div class="pattern-center-blank"></div>
+
+  <div class="pattern-center single-center">
+    <!-- 有配图默认渲染第一张 -->
+    <div class="pattern-attachment-img lazyload" style="background-image: url(https://cdn.jsdelivr.net/gh/pengjunlee/picture-warehouse/java-design-pattern/design-pattern13.png);" src="https://cdn.jsdelivr.net/gh/pengjunlee/picture-warehouse/img/orange.progress-bar-stripe-loader.svg" data-src="https://cdn.jsdelivr.net/gh/pengjunlee/picture-warehouse/java-design-pattern/design-pattern13.png">
+    </div>
+    <header class="pattern-header single-header">
+      <h1 class="entry-title">
+      Java设计模式系列之--享元模式</h1>
+      <p class="entry-census">
+        <span>
+          <a href="pengjunlee">
+            <img src="https://cdn.jsdelivr.net/gh/pengjunlee/picture-warehouse/img/logo.jpg">
+          </a>
+        </span>
+        <span>
+          <a href="pengjunlee">李朋军</a>
+        </span>
+        <span class="bull">
+        ·</span>
+        2020-5-24<span class="bull">
+        ·</span>
+      <span id="busuanzi_value_page_pv"></span>次阅读</p>
+    </header>
+  </div>
+
+<div id="content" class="site-content">
+  <div id="primary" class="content-area">
+    <main id="main" class="site-main" role="main">
+      <article id="post-1" class="post-1 post type-post status-publish format-standard has-post-thumbnail hentry category-uncategorized">
+        <div class="toc"></div>
+        <!--<div class="toc-entry-content"><!-- 套嵌目录使用（主要为了支援评论）-->
+        
+        <div class="entry-content">
+          <h1 id="一、什么是享元模式"><a href="#一、什么是享元模式" class="headerlink" title="一、什么是享元模式"></a>一、什么是享元模式</h1><p>享元Flyweight模式是构造型模式之一，它通过共享数据使得相同对象在内存中仅创建一个实例，以降低系统创建对象实例的性能消耗。</p>
+<p>以博客里写文章为例来说吧，把文章和文章中的文字看作对象，我们每在博客里写一个字就相当于是创建一个文字对象，假如我们写的文章有一万个字，那我们岂不是要创建一万次文字对象，如此频繁的创建对象势必会严重拖累系统的性能。</p>
+<p>享元模式通过数据共享使得重复使用的相同对象在内存中仅创建一次：这就好比汉字中的 “的” 字虽然在文章中反复出现，但它仅在第一次被使用的时候创建 “的” (共享对象)并保存起来，之后再用到 “的” 字的话直接获取之前创建好的 “的” 对象即可，不需要再次创建了。</p>
+<p>下面是两张使用享元模式前后的对比图，看完这两张图相信大家就能理解享元模式的作用了。</p>
+<p>使用享元模式前： </p>
+<p><div align="center"><img src="https://cdn.jsdelivr.net/gh/pengjunlee/picture-warehouse/java-design-pattern/11.png" alt="静态代理模式结构示意图" title="静态代理模式结构示意图"></div></p>
+<div align="left">
+
+
+<p>使用享元模式后： </p>
+<p><div align="center"><img src="https://cdn.jsdelivr.net/gh/pengjunlee/picture-warehouse/java-design-pattern/12.png" alt="静态代理模式结构示意图" title="静态代理模式结构示意图"></div></p>
+<div align="left">
+
+<h1 id="二、享元模式在Java中的典型应用"><a href="#二、享元模式在Java中的典型应用" class="headerlink" title="二、享元模式在Java中的典型应用"></a>二、享元模式在Java中的典型应用</h1><p>在Java语言中，String类型就使用了享元模式。String对象是final类型，对象一旦创建就不可改变，同时JAVA会确保一个字符串常量（例如：”Flyweight”）在常量池中只能存在一份拷贝,例如下面这段简单代码： </p>
+<pre><code>  String str1=&quot;Flyweight&quot;;
+  String str2=&quot;Flyweight&quot;;
+
+  if(str1==str2){
+   System.out.println(&quot;str1与str2指向同一对象&quot;);
+  }
+  else
+  {
+   System.out.println(&quot;str1与str2指向不同对象&quot;);
+  }
+</code></pre><p>打印结果：</p>
+<p><code>str1与str2指向同一对象</code></p>
+<p>在以上代码中if语句比较的是对象str1和str2中存储的内存地址是否相同，从最终的打印结果可以看出：两次创建的字符串常量”Flyweight”内存地址相同，即两个字符串其实是同一个对象。</p>
+<h1 id="三、享元模式的结构"><a href="#三、享元模式的结构" class="headerlink" title="三、享元模式的结构"></a>三、享元模式的结构</h1><p>享元模式分为单纯享元模式和复合享元模式两种。</p>
+<h2 id="单纯享元模式"><a href="#单纯享元模式" class="headerlink" title="单纯享元模式"></a>单纯享元模式</h2><p><div align="center"><img src="https://cdn.jsdelivr.net/gh/pengjunlee/picture-warehouse/java-design-pattern/13.png" alt="静态代理模式结构示意图" title="静态代理模式结构示意图"></div></p>
+<div align="left">
+
+<p>单纯享元模式涉及的角色及其职责如下：</p>
+<ul>
+<li>抽象享元(Flyweight)角色：所有具体享元类的父类或实现的接口，以规定所有具体享元角色需要实现的方法。</li>
+<li>具体享元(ConcreteFlyweight)角色：又叫单纯享元角色，是抽象享元角色的具体实现类，如果有内蕴状态的话，它负责为内蕴状态提供存储空间。具体享元对象的内蕴状态必须与对象所处的周围环境无关，从而使得享元对象可以在系统内共享。</li>
+<li>享元工厂(FlyweightFactory)角色：负责创建和管理享元角色。本角色必须保证享元对象可以被系统适当地共享。当客户端调用某个享元对象的时候，享元工厂角色会检查系统中是否已经存在符合要求的享元对象，如果已经存在则直接提供，若不存在则新创建一个。</li>
+</ul>
+<p>单纯享元模式结构示意源代码如下：<br>在单纯的享元模式中，Flyweight接口用以规定出所有具体享元角色需要实现的方法。</p>
+<pre><code>public interface Flyweight {
+
+    /**
+     * 用以规定所有具体享元角色需要实现的方法.
+     */
+    void operation(String extrinsicState);
+
+}
+</code></pre><p>具体享元ConcreteFlyweight一方面要保存需共享的内蕴状态，另一方面将外蕴状态作为参数传入operation()方法中，可改变方法的行为，但并不改变对象的内蕴状态。 </p>
+<pre><code>public class ConcreteFlyweight implements Flyweight {
+
+    private String intrinsicState = null;
+
+    /**
+     * 构造函数中内蕴状态作为参数传入.
+     */
+    public ConcreteFlyweight(String intrinsicState) {
+        this.intrinsicState = intrinsicState;
+    }
+
+    /**
+     * 外蕴状态作为参数传入方法中，可改变方法的行为，但并不改变对象的内蕴状态.
+     */
+    @Override
+    public void operation(String extrinsicState) {
+        System.out.println();
+        System.out.println(&quot;内蕴状态：&quot; + intrinsicState);
+        System.out.println(&quot;外蕴状态：&quot; + extrinsicState);
+        System.out.println(&quot;&amp;&amp;&amp;&amp;&amp;&amp;&amp;&amp;&amp;&amp;&amp;&amp;&amp;&amp;&amp;&amp;&amp;&amp;&amp;&amp;&amp;&amp;&amp;&amp;&amp;&amp;&amp;&amp;&amp;&amp;&quot;);
+    }
+
+    public String toString() {
+        return this.intrinsicState;
+    }
+}
+</code></pre><p>享元工厂FlyweightFactory负责维护一个享元对象存储池（Flyweight Pool）来存放内部状态的对象。为了调用方便，该工厂类一般使用单例模式来实现。  </p>
+<pre><code>import java.util.HashMap;
+import java.util.Map;
+
+public class FlyweightFactory {
+
+    // 用来登记和存储已经创建过的享元对象
+    private Map&lt;String, Flyweight&gt; flyweightMap = new HashMap&lt;String, Flyweight&gt;();
+
+    // 采用单例模式
+    private static FlyweightFactory flyweightFactory = new FlyweightFactory();
+
+    // 私有化享元工厂的构造方法
+    private FlyweightFactory() {
+    }
+
+    // 获取单例享元工厂的实例
+    public static FlyweightFactory getFlyweightFactory() {
+        return flyweightFactory;
+    }
+
+    public Flyweight getFlyweight(String intrinsicState) {
+        Flyweight flyweight = flyweightMap.get(intrinsicState);
+        if (null == flyweight) {
+            flyweight = new ConcreteFlyweight(intrinsicState);
+            flyweightMap.put(intrinsicState, flyweight);
+        }
+        return flyweight;
+    }
+
+    public Map&lt;String, Flyweight&gt; getFlyweightMap() {
+        return flyweightMap;
+    }
+
+}
+</code></pre><p>在Client类中创建的main()方法中进行测试。 </p>
+<pre><code>import java.util.Map.Entry;
+
+public class Client {
+
+    public static void main(String[] args) {
+        FlyweightFactory flyweightFactory = FlyweightFactory.getFlyweightFactory();
+        flyweightFactory.getFlyweight(&quot;爱&quot;).operation(&quot;位置1&quot;);
+        flyweightFactory.getFlyweight(&quot;我&quot;).operation(&quot;位置2&quot;);
+        flyweightFactory.getFlyweight(&quot;的&quot;).operation(&quot;位置3&quot;);
+        flyweightFactory.getFlyweight(&quot;人&quot;).operation(&quot;位置4&quot;);
+        flyweightFactory.getFlyweight(&quot;和&quot;).operation(&quot;位置5&quot;);
+        flyweightFactory.getFlyweight(&quot;我&quot;).operation(&quot;位置6&quot;);
+        flyweightFactory.getFlyweight(&quot;爱&quot;).operation(&quot;位置7&quot;);
+        flyweightFactory.getFlyweight(&quot;的&quot;).operation(&quot;位置8&quot;);
+        flyweightFactory.getFlyweight(&quot;人&quot;).operation(&quot;位置9&quot;);
+
+        System.out.println(&quot;已存储的享元对象个数：&quot;+flyweightFactory.getFlyweightMap().size()+&quot;个&quot;);
+        for (Entry&lt;String, Flyweight&gt; entry : flyweightFactory.getFlyweightMap().entrySet()) {
+            System.out.println(entry.getValue());
+        }
+
+    }
+
+}
+</code></pre><p>运行程序打印结果如下：  </p>
+<p>内蕴状态：爱<br>外蕴状态：位置1<br>&amp;&amp;&amp;&amp;&amp;&amp;&amp;&amp;&amp;&amp;&amp;&amp;&amp;&amp;&amp;&amp;&amp;&amp;&amp;&amp;&amp;&amp;&amp;&amp;&amp;&amp;&amp;&amp;&amp;&amp;  </p>
+<p>内蕴状态：我<br>外蕴状态：位置2<br>&amp;&amp;&amp;&amp;&amp;&amp;&amp;&amp;&amp;&amp;&amp;&amp;&amp;&amp;&amp;&amp;&amp;&amp;&amp;&amp;&amp;&amp;&amp;&amp;&amp;&amp;&amp;&amp;&amp;&amp;  </p>
+<p>内蕴状态：的<br>外蕴状态：位置3<br>&amp;&amp;&amp;&amp;&amp;&amp;&amp;&amp;&amp;&amp;&amp;&amp;&amp;&amp;&amp;&amp;&amp;&amp;&amp;&amp;&amp;&amp;&amp;&amp;&amp;&amp;&amp;&amp;&amp;&amp;  </p>
+<p>内蕴状态：人<br>外蕴状态：位置4<br>&amp;&amp;&amp;&amp;&amp;&amp;&amp;&amp;&amp;&amp;&amp;&amp;&amp;&amp;&amp;&amp;&amp;&amp;&amp;&amp;&amp;&amp;&amp;&amp;&amp;&amp;&amp;&amp;&amp;&amp;  </p>
+<p>内蕴状态：和<br>外蕴状态：位置5<br>&amp;&amp;&amp;&amp;&amp;&amp;&amp;&amp;&amp;&amp;&amp;&amp;&amp;&amp;&amp;&amp;&amp;&amp;&amp;&amp;&amp;&amp;&amp;&amp;&amp;&amp;&amp;&amp;&amp;&amp;  </p>
+<p>内蕴状态：我<br>外蕴状态：位置6<br>&amp;&amp;&amp;&amp;&amp;&amp;&amp;&amp;&amp;&amp;&amp;&amp;&amp;&amp;&amp;&amp;&amp;&amp;&amp;&amp;&amp;&amp;&amp;&amp;&amp;&amp;&amp;&amp;&amp;&amp;  </p>
+<p>内蕴状态：爱<br>外蕴状态：位置7<br>&amp;&amp;&amp;&amp;&amp;&amp;&amp;&amp;&amp;&amp;&amp;&amp;&amp;&amp;&amp;&amp;&amp;&amp;&amp;&amp;&amp;&amp;&amp;&amp;&amp;&amp;&amp;&amp;&amp;&amp;  </p>
+<p>内蕴状态：的<br>外蕴状态：位置8<br>&amp;&amp;&amp;&amp;&amp;&amp;&amp;&amp;&amp;&amp;&amp;&amp;&amp;&amp;&amp;&amp;&amp;&amp;&amp;&amp;&amp;&amp;&amp;&amp;&amp;&amp;&amp;&amp;&amp;&amp;  </p>
+<p>内蕴状态：人<br>外蕴状态：位置9<br>&amp;&amp;&amp;&amp;&amp;&amp;&amp;&amp;&amp;&amp;&amp;&amp;&amp;&amp;&amp;&amp;&amp;&amp;&amp;&amp;&amp;&amp;&amp;&amp;&amp;&amp;&amp;&amp;&amp;&amp;<br>已存储的享元对象个数：5个<br>爱<br>我<br>的<br>人<br>和  </p>
+<p>从以上程序的运行结果不难看出，虽然我们新建了9个Flyweight对象，但在内存池中实际上只有5个，这就是共享的含义。 </p>
+<h2 id="复合享元模式"><a href="#复合享元模式" class="headerlink" title="复合享元模式"></a>复合享元模式</h2><p>在单纯享元模式中，所有的享元对象都是单纯享元对象，也就是说都是可以直接共享的。还有一种较为复杂的情况，将一些单纯享元对象使用合成模式加以组合，形成复合享元对象。这样的复合享元对象本身不能共享，但是它们可以分解成单纯享元对象，而后者则可以共享。  </p>
+<p><div align="center"><img src="https://cdn.jsdelivr.net/gh/pengjunlee/picture-warehouse/java-design-pattern/14.png" alt="静态代理模式结构示意图" title="静态代理模式结构示意图"></div></p>
+<div align="left">
+
+<p>与单纯享元模式相比，复合享元模式增加了一个复合享元(UnsharedConcreteFlyweight)角色，复合享元角色所代表的对象是不可以共享的，又称作不可共享的享元对象。</p>
+<p>复合享元角色实现了抽象享元角色所规定的接口，也就是operation()方法，这个方法有一个参数，代表复合享元对象的外蕴状态。一个复合享元对象的所有单纯享元对象的外蕴状态都是与复合享元对象的外蕴状态相等的；而一个复合享元对象所含有的单纯享元对象的内蕴状态一般是不相等的，不然就没有使用价值了。</p>
+<p>复合享元模式本质上就相当于将原本掺杂在一起的单纯享元对象，根据不同的外蕴状态重新进行了二次分组。这就好比在饭店点餐时，饭店会将不同顾客点的菜记录在顾客自己的点菜单(账单)上一样，与将所有顾客点的菜都记录到一个点菜单上相比，分开记录很明显更便于管理、一目了然，接下来我们就以点餐为例来学习复合享元模式。</p>
+<p>复合享元模式与单纯享元模式的差异代码如下：<br>首先复合享元模式增加了一个不可共享的复合享元(UnsharedConcreteFlyweight)角色。 </p>
+<pre><code>import java.util.HashMap;
+import java.util.Map;
+
+public class UnsharedConcreteFlyweight implements Flyweight {
+
+    //用来登记和存储已经创建过的享元对象
+    private Map&lt;String, Flyweight&gt; flyweightMap = new HashMap&lt;String, Flyweight&gt;();
+
+    //指定所有享元对象的外蕴状态
+    private String extrinsicState = null;
+
+    // 增加一个新的单纯享元对象到集合中
+    public void add(String intrinsicState, Flyweight flyweight) {
+        flyweightMap.put(intrinsicState, flyweight);
+    }
+
+    @Override
+    public void operation(String extrinsicState) {
+        this.extrinsicState = extrinsicState;
+    }
+
+    public void getFlyweight(String intrinsicState){
+        Flyweight flyweight=flyweightMap.get(intrinsicState);
+        if(null!=flyweight){
+            flyweight.operation(extrinsicState);
+        }
+        else{
+            System.out.println();
+            System.out.println(extrinsicState+&quot;未点过:&quot;+intrinsicState);
+            System.out.println(&quot;&amp;&amp;&amp;&amp;&amp;&amp;&amp;&amp;&amp;&amp;&amp;&amp;&amp;&amp;&amp;&amp;&amp;&amp;&amp;&amp;&amp;&amp;&amp;&amp;&amp;&amp;&amp;&quot;);
+        }
+    }
+
+    public Map&lt;String, Flyweight&gt; getFlyweightMap() {
+        return flyweightMap;
+    }
+
+}
+</code></pre><p>享元工厂FlyweightFactory仅需添加一个用于获取复合享元对象的getUnsharedFlyweight()方法，其他代码无需修改。 </p>
+<pre><code>public class FlyweightFactory {
+
+    /**
+     * 此处省略单纯享元模式中享元工厂已有代码
+     * ...
+     * ...
+     * 原有代码不变，仅新增一个getUnsharedFlyweight()方法.
+     */
+
+    public UnsharedConcreteFlyweight getUnsharedFlyweight(List&lt;String&gt; intrinsicStates) {
+        UnsharedConcreteFlyweight unsharedFlyweight = new UnsharedConcreteFlyweight();
+        for (String intrinsicState : intrinsicStates) {
+            unsharedFlyweight.add(intrinsicState, getFlyweight(intrinsicState));
+        }
+        return unsharedFlyweight;
+    }
+
+}
+</code></pre><p>在Client客户端类进行测试，其修改后代码如下。 </p>
+<pre><code>import java.util.ArrayList;
+import java.util.List;
+
+public class Client {
+
+    public static void main(String[] args) {
+    List&lt;String&gt; intrinsicStates = new ArrayList&lt;String&gt;();
+        intrinsicStates.add(&quot;木须肉&quot;);
+        intrinsicStates.add(&quot;地三鲜&quot;);
+        intrinsicStates.add(&quot;孜然牛肉&quot;);
+
+        FlyweightFactory flyFactory =FlyweightFactory.getFlyweightFactory();
+
+        UnsharedConcreteFlyweight unsharedFlyweight1 = flyFactory.getUnsharedFlyweight(intrinsicStates);
+        UnsharedConcreteFlyweight unsharedFlyweight2 = flyFactory.getUnsharedFlyweight(intrinsicStates);
+
+        System.out.println(&quot;复合享元对象是否可以共享：&quot; + (unsharedFlyweight1 == unsharedFlyweight2));
+
+        unsharedFlyweight1.operation(&quot;一号桌&quot;);
+        unsharedFlyweight2.operation(&quot;五号桌&quot;);
+
+        //开始给一号桌上菜了
+        unsharedFlyweight1.getFlyweight(&quot;木须肉&quot;);
+        unsharedFlyweight1.getFlyweight(&quot;地三鲜&quot;);
+        unsharedFlyweight1.getFlyweight(&quot;孜然牛肉&quot;);
+        unsharedFlyweight1.getFlyweight(&quot;霸王餐&quot;);
+
+        System.out.println();
+
+        String intrinsicState =&quot;木须肉&quot;;
+        Flyweight flyweight1 = unsharedFlyweight1.getFlyweightMap().get(intrinsicState);
+        Flyweight flyweight2 = unsharedFlyweight2.getFlyweightMap().get(intrinsicState);
+        System.out.println(&quot;不同复合享元对象中的单纯享元对象是否可以共享：&quot; + (flyweight1 == flyweight2));
+    }
+
+}
+</code></pre><p>运行程序打印结果如下：  </p>
+<p>复合享元对象是否可以共享：false</p>
+<p>内蕴状态：木须肉<br>外蕴状态：一号桌<br>&amp;&amp;&amp;&amp;&amp;&amp;&amp;&amp;&amp;&amp;&amp;&amp;&amp;&amp;&amp;&amp;&amp;&amp;&amp;&amp;&amp;&amp;&amp;&amp;&amp;&amp;&amp;</p>
+<p>内蕴状态：地三鲜<br>外蕴状态：一号桌<br>&amp;&amp;&amp;&amp;&amp;&amp;&amp;&amp;&amp;&amp;&amp;&amp;&amp;&amp;&amp;&amp;&amp;&amp;&amp;&amp;&amp;&amp;&amp;&amp;&amp;&amp;&amp;</p>
+<p>内蕴状态：孜然牛肉<br>外蕴状态：一号桌<br>&amp;&amp;&amp;&amp;&amp;&amp;&amp;&amp;&amp;&amp;&amp;&amp;&amp;&amp;&amp;&amp;&amp;&amp;&amp;&amp;&amp;&amp;&amp;&amp;&amp;&amp;&amp;</p>
+<p>一号桌未点过:霸王餐<br>&amp;&amp;&amp;&amp;&amp;&amp;&amp;&amp;&amp;&amp;&amp;&amp;&amp;&amp;&amp;&amp;&amp;&amp;&amp;&amp;&amp;&amp;&amp;&amp;&amp;&amp;&amp;</p>
+<p>不同复合享元对象中的单纯享元对象是否可以共享：true  </p>
+<h1 id="四、享元模式应用举例"><a href="#四、享元模式应用举例" class="headerlink" title="四、享元模式应用举例"></a>四、享元模式应用举例</h1><p>场景：如下图所示，我们要做一个画图程序，为简单起见，假设该画图程序仅能画相同大小(直径20mm)的圆，但圆的颜色和位置可以不同。 </p>
+<p><div align="center"><img src="https://cdn.jsdelivr.net/gh/pengjunlee/picture-warehouse/java-design-pattern/15.png" alt="静态代理模式结构示意图" title="静态代理模式结构示意图"></div></p>
+<div align="left">
+
+<p>如果想要使用享元模式来对该画图程序进行设计的话，首先要提取出享元对象(圆)的内蕴状态和外蕴状态。</p>
+<ul>
+<li>内蕴状态：圆的颜色。  </li>
+<li>外蕴状态：圆的位置。</li>
+</ul>
+<p>接下来，首先定义享元对象的抽象接口Circle，只含有一个draw()方法。</p>
+<pre><code>public interface Circle {
+
+    //画圆方法，需传入绘制的坐标x,y
+    void draw(int x,int y);
+}
+</code></pre><p>然后再定义具体享元角色类ConcreteCircle。</p>
+<pre><code>import java.awt.Color;
+
+public class ConcreteCircle implements Circle {
+
+    //内蕴状态，圆的颜色
+    private Color color;
+
+    //构造函数中内蕴状态作为参数传入.
+    public ConcreteCircle(Color color){
+        super();
+        this.color=color;
+    }
+
+    // 外蕴状态作为参数传入绘图方法中，用以指定绘图位置.
+    @Override
+    public void draw(int x, int y) {
+        System.out.println(&quot;圆的颜色：&quot;+this.color+&quot;，坐标：X &quot;+x+&quot;,Y &quot;+y+&quot;。&quot;);
+    }
+
+}
+</code></pre><p>再定义享元工厂类CircleFactory。</p>
+<pre><code>import java.awt.Color;
+import java.util.HashMap;
+import java.util.Map;
+
+public class CircleFactory {
+
+    private Map&lt;Color, Circle&gt; circleMap = new HashMap&lt;Color, Circle&gt;();
+
+    // 采用单例模式
+    private static CircleFactory circleFactory = new CircleFactory();
+
+    // 私有化享元工厂的构造方法
+    private CircleFactory() {
+    }
+
+    // 获取单例享元工厂的实例
+    public static CircleFactory getCircleFactory() {
+        return circleFactory;
+    }
+
+    public Circle getCircle(Color color) {
+        Circle circle = circleMap.get(color);
+        if (null == circle) {
+            circle = new ConcreteCircle(color);
+            circleMap.put(color, circle);
+        }
+        return circle;
+    }
+}
+</code></pre><p>最后创建客户端Client类。</p>
+<pre><code>import java.awt.Color;
+
+public class Client {
+
+    public static void main(String[] args) {
+        /**
+         *  7个红色圆的坐标：(0,0) (0,25) (0,50) (0,75) (0,100) (25,100) (50,100)
+         * 11个蓝色圆的坐标：(100,0) (125,0) (150,0) (100,25) (100,50) (125,50) (150,50) (100,75) (100,100) (125,100) (150,100)
+         * 11个绿色圆的坐标：(200,0) (225,0) (250,0) (200,25) (200,50) (225,50) (250,50) (200,75) (200,100) (225,100) (250,100)
+         */
+        CircleFactory circleFactory=CircleFactory.getCircleFactory();
+
+        circleFactory.getCircle(Color.RED).draw(0, 0);
+        circleFactory.getCircle(Color.RED).draw(0, 25);
+        circleFactory.getCircle(Color.RED).draw(0, 50);
+        circleFactory.getCircle(Color.RED).draw(0, 75);
+        circleFactory.getCircle(Color.RED).draw(0, 100);
+        circleFactory.getCircle(Color.RED).draw(25, 100);
+        circleFactory.getCircle(Color.RED).draw(50, 100);
+        /**
+         * ...篇幅所限，蓝色圆和绿色圆的绘制代码此处省略...
+         */
+    }
+}
+</code></pre><p>运行程序打印结果如下：</p>
+<p>圆的颜色：java.awt.Color[r=255,g=0,b=0]，坐标：X 0,Y 0。<br>圆的颜色：java.awt.Color[r=255,g=0,b=0]，坐标：X 0,Y 25。<br>圆的颜色：java.awt.Color[r=255,g=0,b=0]，坐标：X 0,Y 50。<br>圆的颜色：java.awt.Color[r=255,g=0,b=0]，坐标：X 0,Y 75。<br>圆的颜色：java.awt.Color[r=255,g=0,b=0]，坐标：X 0,Y 100。<br>圆的颜色：java.awt.Color[r=255,g=0,b=0]，坐标：X 25,Y 100。<br>圆的颜色：java.awt.Color[r=255,g=0,b=0]，坐标：X 50,Y 100。  </p>
+<h1 id="五、享元模式的适用性"><a href="#五、享元模式的适用性" class="headerlink" title="五、享元模式的适用性"></a>五、享元模式的适用性</h1><p>Flyweight模式的有效性很大程度上取决于如何使用它以及在何处使用它。当出现下列情形时可以考虑使用Flyweight模式。</p>
+<ol>
+<li>一个应用程序使用了大量的对象。</li>
+<li>完全由于使用大量的对象，造成很大的存储开销。</li>
+<li>对象的大多数状态都可变为外部状态。</li>
+<li>如果删除对象的外部状态，那么可以用相对较少的共享对象取代很多组对象。</li>
+<li>应用程序不依赖对象标识。 </li>
+</ol>
+<h1 id="六、享元模式的特点"><a href="#六、享元模式的特点" class="headerlink" title="六、享元模式的特点"></a>六、享元模式的特点</h1><p><strong>享元模式的优点</strong>：减少对象数量，节省内存空间。<br><strong>享元模式的缺点</strong>：</p>
+<ol>
+<li>享元模式使得系统更加复杂。为了使对象可以共享，需要将一些状态外部化，这使得程序的逻辑复杂化。</li>
+<li>享元模式将享元对象的状态外部化，而读取外部状态使得运行时间稍微变长。 </li>
+</ol>
+<p><code>享元模式的本质：分离与共享</code></p>
+<h1 id="七、总结"><a href="#七、总结" class="headerlink" title="七、总结"></a>七、总结</h1><p>享元模式是一个考虑系统性能的设计模式，通过使用享元模式可以节约内存空间，提高系统的性能。享元模式的核心在于享元工厂类，享元工厂类的作用在于提供一个用于存储享元对象的享元池，用户需要对象时，首先从享元池中获取，如果享 元池中不存在，则创建一个新的享元对象返回给用户，并在享元池中保存该新增对象。 </p>
+</div></div></div></div></div>
+        </div>
+        <!-- .entry-content -->
+        <div class="single-reward">
+          <div class="reward-open">赏
+            <div class="reward-main">
+              <ul class="reward-row">
+                <li class="alipay-code"><img src="https://cdn.jsdelivr.net/gh/pengjunlee/picture-warehouse/img/AliPayQR.jpg"></li>
+                <li class="wechat-code"><img src="https://cdn.jsdelivr.net/gh/pengjunlee/picture-warehouse/img/WeChanQR.jpg"></li>
+              </ul>
+            </div>
+          </div>
+        </div>
+        <div style="text-align:center; width: 100%" class="social-share share-mobile" data-disabled="diandian, tencent"></div>
+        <footer class="post-footer">
+          <div class="post-lincenses"><a href="https://creativecommons.org/licenses/by-nc-sa/4.0/deed.zh" target="_blank" rel="nofollow"><i class="fa fa-creative-commons" aria-hidden="true"></i> 知识共享署名-非商业性使用-相同方式共享 4.0 国际许可协议</a></div>
+          <div class="post-tags">
+          </div>
+          <div class="post-share">
+            <div class="social-share sharehidden share-component"></div>
+            <i class="iconfont show-share icon-forward"></i>
+          </div>
+        </footer><!-- .entry-footer -->
+      </article>
+      <!-- #post-## -->
+      <div class="toc" style="background: none;"></div>
+      <section class="post-squares nextprev">
+        
+          
+            <div class="post-nepre half previous">
+          
+            <a href="/2020/05/24/Java设计模式之--访问者模式/" rel="prev">
+              <div class="background">
+                <img class="lazyload" src="https://cdn.jsdelivr.net/gh/pengjunlee/picture-warehouse/img/orange.progress-bar-stripe-loader.svg" data-src="https://cdn.jsdelivr.net/gh/pengjunlee/picture-warehouse/java-design-pattern/design-pattern12.png" style="width: 100%; height: 100%; object-fit: cover; pointer-events: none;" onerror="imgError(this,3)" src="https://cdn.jsdelivr.net/gh/pengjunlee/picture-warehouse/java-design-pattern/design-pattern12.png">
+              </div>
+              <span class="label">
+              Previous Post</span>
+              <div class="info">
+                <h3>
+                Java设计模式系列之--访问者模式</h3>
+                <hr>
+              </div>
+            </a>
+          </div>
+        
+        
+          
+            <div class="post-nepre half next">
+          
+            <a href="/2020/05/24/Java设计模式之--适配器模式/" rel="next">
+              <div class="background">
+                <img class="lazyload" src="https://cdn.jsdelivr.net/gh/pengjunlee/picture-warehouse/img/orange.progress-bar-stripe-loader.svg" data-src="https://cdn.jsdelivr.net/gh/pengjunlee/picture-warehouse/java-design-pattern/design-pattern14.png" style="width: 100%; height: 100%; object-fit: cover; pointer-events: none;" onerror="imgError(this,3)" src="https://cdn.jsdelivr.net/gh/pengjunlee/picture-warehouse/java-design-pattern/design-pattern14.png">
+              </div>
+              <span class="label">
+              Next Post</span>
+              <div class="info">
+                <h3>
+                Java设计模式系列之--适配器模式</h3>
+                <hr>
+              </div>
+            </a>
+          </div>
+        
+      </section>
+      
+<div id="vcomments"></div>
+<script>
+  window.onload = function(){
+      var valine = new Valine();
+      valine.init({
+        el: '#vcomments',
+        appId: "k0QcRvFFw7AovKS8un6pys2S-gzGzoHsz",
+        appKey: "Y5w42nyHhdKlYHT00svHuIya",
+        path: window.location.pathname,
+        placeholder: "你是我一生只会遇见一次的惊喜 ..."
+      })
+  }
+</script>
+
+      <section class="author-profile">
+        <div class="info" itemprop="author" itemscope="" itemtype="https://schema.org/Person">
+          <a href="pengjunlee" class="profile gravatar"><img src="https://cdn.jsdelivr.net/gh/pengjunlee/picture-warehouse/img/logo.jpg" itemprop="image" alt="李朋军" height="70" width="70"></a>
+          <div class="meta">
+            <span class="title">Author</span>
+            <h3 itemprop="name">
+            <a href="pengjunlee" itemprop="url" rel="author">李朋军</a>
+            </h3>
+          </div>
+        </div>
+        <hr>
+        <p><i class="iconfont icon-write"></i>为他人带来阳光的人，自己也一定会沐浴在阳光下。</p>
+      </section>
+    </main><!-- #main -->
+  </div><!-- #primary -->
+</div>
+
+
+
+    </div>    
+    <div class="ins-search">
+    <div class="ins-search-mask"></div>
+    <div class="ins-search-container">
+        <div class="ins-input-wrapper">
+            <input type="text" class="ins-search-input" placeholder="请输入关键词..."/>
+            <span class="ins-close ins-selectable"><i class="fa fa-times-circle"></i></span>
+        </div>
+        <div class="ins-section-wrapper">
+            <div class="ins-section-container"></div>
+        </div>
+    </div>
+</div>
+<script>
+(function (window) {
+    var INSIGHT_CONFIG = {
+        TRANSLATION: {
+            POSTS: '文章',
+            // PAGES: '页面',
+            CATEGORIES: '分类',
+            TAGS: '标签',
+        },
+        ROOT_URL: '/',
+        CONTENT_URL: '/content.json',
+    };
+    window.INSIGHT_CONFIG = INSIGHT_CONFIG;
+})(window);
+</script>
+    <!-- <footer id="footer">
+  
+  <div class="outer">
+    <div id="footer-info" class="inner">
+      &copy; 2023 pengjunlee<br>
+      powered_by <a href="http://hexo.io/" target="_blank">Hexo</a>
+    </div>
+  </div>
+</footer> -->
+<footer id="colophon" class="site-footer" role="contentinfo">
+  <div class="site-info">
+    <div class="footertext">
+      <div class="img-preload">
+        <img src="https://cdn.jsdelivr.net/gh/honjun/cdn@1.6/img/other/wordpress-rotating-ball-o.svg">
+        <img src="https://cdn.jsdelivr.net/gh/honjun/cdn@1.6/img/other/disqus-preloader.svg">
+      </div>
+      <p style="color: #666666;">&copy 2018</p>
+    </div>
+    <div class="footer-device">
+    <p style="font-family: 'Ubuntu', sans-serif;">
+        <span style="color: #b9b9b9;">Theme <a href="https://github.com/honjun/hexo-theme-sakura" target="_blank" style="color: #b9b9b9;;text-decoration: underline dotted rgba(0, 0, 0, .1);">Sakura</a> <i class="iconfont icon-sakura rotating" style="color: #ffc0cb;display:inline-block"></i> by <a href="https://2heng.xin/" target="_blank" style="color: #b9b9b9;;text-decoration: underline dotted rgba(0, 0, 0, .1);">Mashiro</a>&<a href="https://www.hojun.cn/" target="_blank" style="color: #b9b9b9;;text-decoration: underline dotted rgba(0, 0, 0, .1);">Hojun</a>, Powered by Hexo, Hosted by Coding Pages</a>
+        </span>
+      </p>
+    </div>
+  </div><!-- .site-info -->
+</footer>
+
+
+
+<!-- <script src="/js/tocbot.js"></script> -->
+<script type="text/javascript" src="/js/lib.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/clipboard@2/dist/clipboard.min.js"></script>
+<script type="text/javascript" src="/js/InsightSearch.js"></script>
+<script type="text/javascript" src="/js/jquery.fancybox.min.js"></script>
+<script type="text/javascript" src="/js/zoom.min.js"></script>
+<script type="text/javascript" src="/js/sakura-app.js"></script>
+<script src="//cdn1.lncld.net/static/js/3.0.4/av-min.js"></script>
+<script src='//unpkg.com/valine@1.3.4/dist/Valine.min.js'></script>
+<script src="/js/botui.js"></script>
+<!-- 不蒜子 网页计数器 -->
+<script src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+<!-- <script src="https://cdnjs.cloudflare.com/ajax/libs/tocbot/4.4.2/tocbot.min.js"></script> -->
+<script type="text/javascript">
+/* <![CDATA[ */
+if (/Android|webOS|iPhone|iPod|BlackBerry/i.test(navigator.userAgent)) {
+  var Poi = {"pjax":"1","movies":{"url": "https://cdn.jsdelivr.net/gh/pengjunlee/picture-warehouse/img","name":"Unbroken.mp4","live":"close"},"windowheight":"fixed","codelamp":"close","ajaxurl":"","order":"asc","formpostion":"bottom"};
+} else {
+  var Poi = {"pjax":"1","movies":{"url": "https://cdn.jsdelivr.net/gh/pengjunlee/picture-warehouse/img","name":"Unbroken.mp4","live":"open"},"windowheight":"auto","codelamp":"close","ajaxurl":"","order":"asc","formpostion":"bottom"};
+}
+/* ]]> */
+
+</script>
+<script>
+$(document).ready(function() {
+  if ($(".toc").length > 0 && document.body.clientWidth > 1200) {
+    if ($(".pattern-center").length > 0) { //有图的情况
+      tocbot.init({
+          // Where to render the table of contents.
+          tocSelector: '.toc', // 放置目录的容器
+          // Where to grab the headings to build the table of contents.
+          contentSelector: '.entry-content', // 正文内容所在
+          // Which headings to grab inside of the contentSelector element.
+          scrollSmooth: true,
+          headingSelector: 'h1, h2, h3, h4, h5', // 需要索引的标题级别
+          headingsOffset: -400,
+          scrollSmoothOffset: -85
+      });
+    } else {
+      tocbot.init({
+          // Where to render the table of contents.
+          tocSelector: '.toc', // 放置目录的容器
+          // Where to grab the headings to build the table of contents.
+          contentSelector: '.entry-content', // 正文内容所在
+          // Which headings to grab inside of the contentSelector element.
+          scrollSmooth: true,
+          headingSelector: 'h1, h2, h3, h4, h5', // 需要索引的标题级别
+          headingsOffset: -85,
+          scrollSmoothOffset: -85
+      });
+    }
+    var offsetTop = $('.toc').offset().top - 95;
+    window.onscroll = function() {
+      var scrollTop = window.pageYOffset || document.documentElement.scrollTop || document.body.scrollTop;
+      if (scrollTop >= offsetTop) {
+        $('.toc').addClass('toc-fixed');
+      } else {
+        $('.toc').removeClass('toc-fixed');
+      }
+    }
+  }
+});
+</script>
+
+    <div class="openNav no-select" style="height: 50px;">
+      <div class="iconflat no-select" style="width: 50px; height: 50px;">
+        <div class="icon"></div>
+      </div>
+      <div class="site-branding search-form-submit">
+        <i class="iconfont js-toggle-search iconsearch icon-search"></i>
+      </div>
+    </div>
+  </section>
+  <div id="mo-nav" class="">
+  <div class="m-avatar">
+    <img src="https://cdn.jsdelivr.net/gh/pengjunlee/picture-warehouse/img/avatar.jpg">
+  </div>
+  <p style="text-align: center; color: #333; font-weight: 900; font-family: 'Ubuntu', sans-serif; letter-spacing: 1.5px">李朋军</p>
+  <p style="text-align: center; word-spacing: 20px;">
+    
+      
+        <a href="http://github.com/honjun" class="fa fa-github" target="_blank" style="color: #333; margin-left:20px"></a>
+      
+        <a href="http://weibo.com/mashirozx?is_all=1" class="fa fa-weibo" target="_blank" style="color: #dd4b39; margin-left:20px"></a>
+      
+        <a href="https://wpa.qq.com/msgrd?v=3&uin=954655431&site=qq&menu=yes" class="fa fa-qq" target="_blank" style="color: #25c6fe; margin-left:20px"></a>
+      
+    
+  </p>
+  <ul id="menu-new-1" class="menu">
+    
+      <li>
+        <a href="/">
+          <span class="faa-parent animated-hover">
+            <i class="fa  fa-fort-awesome faa-shake" aria-hidden="true"></i>
+            首页
+          </span>
+        </a>
+        
+      </li>
+    
+      <li>
+        <a href="/archives">
+          <span class="faa-parent animated-hover">
+            <i class="fa  fa-archive faa-shake" aria-hidden="true"></i>
+            归档
+          </span>
+        </a>
+        
+          <ul class="sub-menu">
+            
+              <li>
+                <a href="/categories/编程/">
+                  <i class="fa fa-code" aria-hidden="true"></i>
+                  编程
+                </a>
+              </li>
+            
+              <li>
+                <a href="/categories/技术/">
+                  <i class="fa fa-cogs" aria-hidden="true"></i>
+                  技术
+                </a>
+              </li>
+            
+              <li>
+                <a href="/categories/生活/">
+                  <i class="fa fa-file-text-o" aria-hidden="true"></i>
+                  生活
+                </a>
+              </li>
+            
+              <li>
+                <a href="/categories/资源/">
+                  <i class="fa fa-cloud-download" aria-hidden="true"></i>
+                  资源
+                </a>
+              </li>
+            
+              <li>
+                <a href="/categories/随想/">
+                  <i class="fa fa-commenting-o" aria-hidden="true"></i>
+                  随想
+                </a>
+              </li>
+            
+              <li>
+                <a href="/categories/转载/">
+                  <i class="fa fa-book" aria-hidden="true"></i>
+                  转载
+                </a>
+              </li>
+            
+          </ul>
+        
+      </li>
+    
+      <li>
+        <a href="javascript:;">
+          <span class="faa-parent animated-hover">
+            <i class="fa  fa-list-ul faa-vertical" aria-hidden="true"></i>
+            清单
+          </span>
+        </a>
+        
+          <ul class="sub-menu">
+            
+              <li>
+                <a href="/tags/悦读/">
+                  <i class="fa fa-th-list faa-bounce" aria-hidden="true"></i>
+                  书单
+                </a>
+              </li>
+            
+              <li>
+                <a href="/bangumi/">
+                  <i class="fa fa-film faa-vertical" aria-hidden="true"></i>
+                  番组
+                </a>
+              </li>
+            
+              <li>
+                <a href="/music/">
+                  <i class="fa fa-headphones" aria-hidden="true"></i>
+                  歌单
+                </a>
+              </li>
+            
+              <li>
+                <a href="/tags/图集/">
+                  <i class="fa fa-photo" aria-hidden="true"></i>
+                  图集
+                </a>
+              </li>
+            
+          </ul>
+        
+      </li>
+    
+      <li>
+        <a href="/comment/">
+          <span class="faa-parent animated-hover">
+            <i class="fa  fa-pencil-square-o faa-tada" aria-hidden="true"></i>
+            留言板
+          </span>
+        </a>
+        
+      </li>
+    
+      <li>
+        <a href="/links/">
+          <span class="faa-parent animated-hover">
+            <i class="fa  fa-link faa-shake" aria-hidden="true"></i>
+            友人帐
+          </span>
+        </a>
+        
+      </li>
+    
+      <li>
+        <a href="/donate/">
+          <span class="faa-parent animated-hover">
+            <i class="fa  fa-heart faa-pulse" aria-hidden="true"></i>
+            赞赏
+          </span>
+        </a>
+        
+      </li>
+    
+      <li>
+        <a href="/">
+          <span class="faa-parent animated-hover">
+            <i class="fa  fa-leaf faa-wrench" aria-hidden="true"></i>
+            关于
+          </span>
+        </a>
+        
+          <ul class="sub-menu">
+            
+              <li>
+                <a href="/about/">
+                  <i class="fa fa-meetup" aria-hidden="true"></i>
+                  我？
+                </a>
+              </li>
+            
+              <li>
+                <a href="/theme-sakura/">
+                  <i class="fa iconfont icon-sakura" aria-hidden="true"></i>
+                  主题
+                </a>
+              </li>
+            
+              <li>
+                <a href="/lab/">
+                  <i class="fa fa-cogs" aria-hidden="true"></i>
+                  Lab
+                </a>
+              </li>
+            
+          </ul>
+        
+      </li>
+    
+      <li>
+        <a href="/client/">
+          <span class="faa-parent animated-hover">
+            <i class="fa  fa-android faa-vertical" aria-hidden="true"></i>
+            客户端
+          </span>
+        </a>
+        
+      </li>
+    
+      <li>
+        <a href="/atom.xml">
+          <span class="faa-parent animated-hover">
+            <i class="fa  fa-rss faa-pulse" aria-hidden="true"></i>
+            RSS
+          </span>
+        </a>
+        
+      </li>
+    
+  </ul>
+  <p style="text-align: center; font-size: 13px; color: #b9b9b9;">&copy 2019 hexo-sakura</p>
+</div>
+<button onclick="topFunction()" class="mobile-cd-top" id="moblieGoTop" title="Go to top" style="display: none;"><i class="fa fa-chevron-up" aria-hidden="true"></i></button>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/aplayer/dist/APlayer.min.css">
+<script src="https://cdn.jsdelivr.net/npm/aplayer/dist/APlayer.min.js"></script>
+<!-- require MetingJS -->
+<script src="https://cdn.jsdelivr.net/npm/meting@2/dist/Meting.min.js"></script>
+<style>
+  .aplayer .aplayer-lrc {
+    height: 35px;
+  }
+  .aplayer .aplayer-lrc p{
+    font-size: 16px;
+    font-weight: 700;
+    line-height: 18px !important;
+  }
+  .aplayer .aplayer-lrc p.aplayer-lrc-current{
+    color: #FF1493;
+  }
+  .aplayer.aplayer-narrow .aplayer-body{
+    left: -66px !important;
+  }
+  .aplayer.aplayer-fixed .aplayer-lrc {
+    display: none;
+  }
+  .aplayer .aplayer-lrc.aplayer-lrc-hide {
+      display:none !important;
+  }
+  .aplayer.aplayer-fixed .lrc-show {
+    display: block;
+    background: rgba(255, 255, 255, 0.8);
+  }
+</style>
+<meting-js
+
+    id="2660651585"
+
+    server="netease"
+
+    type="playlist"
+
+    fixed="true"
+
+    autoplay="false"
+
+    loop="all"
+
+    order="random"
+
+    preload="auto"
+
+    volume="0.7"
+
+    mutex="true"
+
+</meting-js>
+<script>
+  $(function(){
+    $('body').on('click', '.aplayer', function(){
+      if($('.aplayer-button').hasClass('aplayer-play')) {
+        $('.aplayer-lrc').removeClass('lrc-show');
+      } else {
+        $('.aplayer-lrc').addClass('lrc-show');
+      }
+    })
+  });
+</script>
+</body>
+</html>

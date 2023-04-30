@@ -1,0 +1,1336 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head><meta name="generator" content="Hexo 3.9.0">
+  <meta charset="utf-8">
+  <meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0" name="viewport">
+  
+  <title itemprop="name">Java设计模式系列之--动态代理模式（上） | 李朋军的个人博客</title>
+  
+    <link rel="shortcut icon" href="/images/favicon.jpg">
+  
+  <meta http-equiv="x-dns-prefetch-control" content="on">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Noto+SerifMerriweather|Merriweather+Sans|Source+Code+Pro|Ubuntu:400,700|Noto+Serif+SC" media="all">
+  <link rel="dns-prefetch" href="//cdn.jsdelivr.net">
+  <link rel="stylesheet" id="saukra_css-css" href="/css/style.css" type="text/css" media="all">
+  <link rel="stylesheet" href="/css/lib.min.css" media="all">
+  <link rel="stylesheet" href="/css/font.css" media="all">
+  <link rel="stylesheet" href="/css/insight.css" media="all">
+  <link rel="stylesheet" href="/css/jquery.fancybox.min.css" media="all">
+  <link rel="stylesheet" href="/css/zoom.css" media="all">
+  <link rel="stylesheet" type="text/css" href="/css/sharejs.css">
+<!--   <link rel="stylesheet" id="saukra_css-css" href="https://2heng.xin/wp-content/cache/autoptimize/css/autoptimize_ad42a61f4c7d4bdd9f91afcff6b5dda5.css
+" type="text/css" media="all"> -->
+  <script>
+  /*Initial Variables*/
+  var mashiro_option = new Object();
+  var mashiro_global = new Object();
+  mashiro_option.NProgressON = true;
+  /* 
+   * 邮箱信息之类的东西可以填在这里，这些js变量基本都作用于sakura-app.js
+   * 这样的设置仅是为了方便在基于PHP开发的主题中设置js变量，既然移植到了Node上，我想或许可以精简这一逻辑吧
+   */
+  mashiro_option.email_domain = "";
+  mashiro_option.email_name = "";
+  mashiro_option.cookie_version_control = "";
+  mashiro_option.qzone_autocomplete = false;
+  mashiro_option.site_name = "李朋军";
+  mashiro_option.author_name = "朋军";
+  mashiro_option.site_url = "http://blog.mtracy.club/";
+  mashiro_option.v_appId = "k0QcRvFFw7AovKS8un6pys2S-gzGzoHsz";
+  mashiro_option.v_appKey = "Y5w42nyHhdKlYHT00svHuIya";
+  mashiro_option.mathjax = "0";
+  mashiro_option.qq_api_url = "https://api.mashiro.top/qqinfo/"; 
+  mashiro_option.qq_avatar_api_url = "https://api.mashiro.top/qqinfo/";
+
+  // mashiro_option.jsdelivr_css_src = "https://cdn.jsdelivr.net/gh/moezx/cdn@3.4.5/css/lib.min.css";
+  // mashiro_option.float_player_on = true;
+
+  /*End of Initial Variables*/
+  </script>
+  <script type="text/javascript">
+  var bg = "https://cdn.jsdelivr.net/gh/pengjunlee/picture-warehouse/img/(1).jpg.webp,https://cdn.jsdelivr.net/gh/pengjunlee/picture-warehouse/img/(2).jpg.webp,https://cdn.jsdelivr.net/gh/pengjunlee/picture-warehouse/img/(3).jpg.webp,https://cdn.jsdelivr.net/gh/pengjunlee/picture-warehouse/img/(4).jpg.webp,https://cdn.jsdelivr.net/gh/pengjunlee/picture-warehouse/img/(5).jpg.webp,https://cdn.jsdelivr.net/gh/pengjunlee/picture-warehouse/img/(6).jpg.webp,https://cdn.jsdelivr.net/gh/pengjunlee/picture-warehouse/img/(7).jpg.webp,https://cdn.jsdelivr.net/gh/pengjunlee/picture-warehouse/img/(8).jpg.webp".split(",");
+  var bgindex = Math.floor(Math.random()*bg.length);
+  if (!!window.ActiveXObject || "ActiveXObject" in window) { //is IE?
+    alert('朋友，IE浏览器未适配哦~');
+  }
+  </script>
+  <style type="text/css">
+  .hljs-ln{border-collapse:collapse}.hljs-ln td{padding:0}.hljs-ln-n:before{content:attr(data-line-number)}
+  </style>
+  <style type="text/css">.site-top .lower nav{display:block !important;}.author-profile i,.post-like a,.post-share .show-share,.sub-text,.we-info a,span.sitename,.post-more i:hover,#pagination a:hover,.post-content a:hover,.float-content i:hover{color:#FE9600}.feature i,.download,.navigator i:hover,.links ul li:before,.ar-time i,span.ar-circle,.object,.comment .comment-reply-link,.siren-checkbox-radio:checked + .siren-checkbox-radioInput:after{background:#FE9600}::-webkit-scrollbar-thumb{background:#FE9600}.download,.navigator i:hover,.link-title,.links ul li:hover,#pagination a:hover,.comment-respond input[type='submit']:hover{border-color:#FE9600}.entry-content a:hover,.site-info a:hover,.comment h4 a,#comments-navi a.prev,#comments-navi a.next,.comment h4 a:hover,.site-top ul li a:hover,.entry-title a:hover,#archives-temp h3,span.page-numbers.current,.sorry li a:hover,.site-title a:hover,i.iconfont.js-toggle-search.iconsearch:hover,.comment-respond input[type='submit']:hover{color:#FE9600}.comments .comments-main{display:block !important;}.comments .comments-hidden{display:none !important;}background-position:center center;background-attachment:inherit;}
+  </style>
+</head>
+</html>
+<body class="page-template page-template-user page-template-page-analytics page-template-userpage-analytics-php page page-id-1297 chinese-font serif isWebKit">
+  <div class="scrollbar" id="bar">
+  </div>
+  <a href="#" class="cd-top faa-float animated"></a>
+  <section id="main-container">
+    <div class="headertop filter-grid">
+  <div id="banner_wave_1"></div>
+  <div id="banner_wave_2"></div>
+  <figure id="centerbg" class="centerbg">
+    <div class="focusinfo no-select">
+      <div class="header-tou">
+        <a href="http://blog.mtracy.club/">
+          <img src="https://cdn.jsdelivr.net/gh/pengjunlee/picture-warehouse/img/avatar.jpg">
+        </a>
+      </div>
+      <div class="header-info">
+        <p>千帆退却，我向前；天涯尽头，是晴天!</p>
+        <div class="top-social_v2">
+          <li id="bg-pre">
+            <img class="flipx" src="https://cdn.jsdelivr.net/gh/honjun/cdn@1.6/img/other/next-b.svg">
+          </li>
+          
+            
+              
+                <li>
+                  <a href="http://github.com/honjun" target="_blank" class="social-github" title="github">
+                    <img src="https://cdn.jsdelivr.net/gh/pengjunlee/picture-warehouse/img/github.png">
+                  </a>
+                </li>
+              
+            
+              
+                <li>
+                  <a href="http://weibo.com/mashirozx?is_all=1" target="_blank" class="social-github" title="sina">
+                    <img src="https://cdn.jsdelivr.net/gh/pengjunlee/picture-warehouse/img/sina.png">
+                  </a>
+                </li>
+              
+            
+              
+                <li>
+                  <a href="http://weibo.com/mashirozx?is_all=1" target="_blank" class="social-github" title="wangyiyun">
+                    <img src="https://cdn.jsdelivr.net/gh/pengjunlee/picture-warehouse/img/wangyiyun.png">
+                  </a>
+                </li>
+              
+            
+              
+                <li>
+                  <a href="http://weibo.com/mashirozx?is_all=1" target="_blank" class="social-github" title="zhihu">
+                    <img src="https://cdn.jsdelivr.net/gh/pengjunlee/picture-warehouse/img/zhihu.png">
+                  </a>
+                </li>
+              
+            
+              
+                <li>
+                  <a href="http://weibo.com/mashirozx?is_all=1" target="_blank" class="social-github" title="email">
+                    <img src="https://cdn.jsdelivr.net/gh/pengjunlee/picture-warehouse/img/email.svg">
+                  </a>
+                </li>
+              
+            
+              
+                <li class="wechat">
+                  <a href="/#">
+                    <img src="https://cdn.jsdelivr.net/gh/pengjunlee/picture-warehouse/img/wechat.png">
+                  </a>
+                  <div class="wechatInner">
+                    <img src="https://cdn.jsdelivr.net/gh/pengjunlee/picture-warehouse/img/wechat.jpg">
+                  </div>
+                </li>
+              
+            
+              
+                <li class="wechat">
+                  <a href="/#">
+                    <img src="https://cdn.jsdelivr.net/gh/pengjunlee/picture-warehouse/img/wechat.png">
+                  </a>
+                  <div class="wechatInner">
+                    <img src="https://cdn.jsdelivr.net/gh/pengjunlee/picture-warehouse/img/wechat.jpg">
+                  </div>
+                </li>
+              
+            
+          
+          <li id="bg-next">
+            <img src="https://cdn.jsdelivr.net/gh/honjun/cdn@1.6/img/other/next-b.svg">
+          </li>
+        </div>
+      </div>
+    </div>
+  </figure>
+  <div id="video-container" style="">
+    <video style="object-fit: fill" id="bgvideo" class="video" video-name="" src="" width="auto" preload="auto">
+    </video>
+    <div id="video-btn" class="loadvideo videolive">
+    </div>
+    <div id="video-add">
+    </div>
+    <div class="video-stu">
+    </div>
+  </div>
+  <div class="headertop-down faa-float animated" onclick="headertop_down()">
+    <span>
+      <i class="fa fa-chevron-down" aria-hidden="true">
+      </i>
+    </span>
+  </div>
+</div>
+    <div id="page" class="site wrapper">
+      <header class="site-header no-select gizle sabit" role="banner">
+  <div class="site-top">
+    <div class="site-branding">
+      <span class="site-title">
+        <span class="logolink moe-mashiro">
+          <a href="/">
+            <span class="sakurasono">李</span>
+            <span class="shironeko">朋军</span>
+          </a>
+        </span>
+      </span>
+    </div>
+    <div class="searchbox search-form-submit">
+      <i class="iconfont js-toggle-search iconsearch icon-search">
+      </i>
+    </div>
+    <div id="show-nav" class="showNav mobile-fit">
+      <div class="line line1">
+      </div>
+      <div class="line line2">
+      </div>
+      <div class="line line3">
+      </div>
+    </div>
+    <div class="lower-cantiner">
+      <div class="lower">
+        <nav class="mobile-fit-control hide">
+          <ul id="menu-new" class="menu">
+            
+              <li>
+                <a href="/">
+                  <span class="faa-parent animated-hover">
+                    <i class="fa  fa-fort-awesome faa-shake" aria-hidden="true"></i>
+                    首页
+                  </span>
+                </a>
+                
+              </li>
+            
+              <li>
+                <a href="/archives">
+                  <span class="faa-parent animated-hover">
+                    <i class="fa  fa-archive faa-shake" aria-hidden="true"></i>
+                    归档
+                  </span>
+                </a>
+                
+                  <ul class="sub-menu">
+                    
+                      <li>
+                        <a href="/categories/编程/">
+                          <i class="fa fa-code" aria-hidden="true"></i>
+                          编程
+                        </a>
+                      </li>
+                    
+                      <li>
+                        <a href="/categories/技术/">
+                          <i class="fa fa-cogs" aria-hidden="true"></i>
+                          技术
+                        </a>
+                      </li>
+                    
+                      <li>
+                        <a href="/categories/生活/">
+                          <i class="fa fa-file-text-o" aria-hidden="true"></i>
+                          生活
+                        </a>
+                      </li>
+                    
+                      <li>
+                        <a href="/categories/资源/">
+                          <i class="fa fa-cloud-download" aria-hidden="true"></i>
+                          资源
+                        </a>
+                      </li>
+                    
+                      <li>
+                        <a href="/categories/随想/">
+                          <i class="fa fa-commenting-o" aria-hidden="true"></i>
+                          随想
+                        </a>
+                      </li>
+                    
+                      <li>
+                        <a href="/categories/转载/">
+                          <i class="fa fa-book" aria-hidden="true"></i>
+                          转载
+                        </a>
+                      </li>
+                    
+                  </ul>
+                
+              </li>
+            
+              <li>
+                <a href="javascript:;">
+                  <span class="faa-parent animated-hover">
+                    <i class="fa  fa-list-ul faa-vertical" aria-hidden="true"></i>
+                    清单
+                  </span>
+                </a>
+                
+                  <ul class="sub-menu">
+                    
+                      <li>
+                        <a href="/tags/悦读/">
+                          <i class="fa fa-th-list faa-bounce" aria-hidden="true"></i>
+                          书单
+                        </a>
+                      </li>
+                    
+                      <li>
+                        <a href="/bangumi/">
+                          <i class="fa fa-film faa-vertical" aria-hidden="true"></i>
+                          番组
+                        </a>
+                      </li>
+                    
+                      <li>
+                        <a href="/music/">
+                          <i class="fa fa-headphones" aria-hidden="true"></i>
+                          歌单
+                        </a>
+                      </li>
+                    
+                      <li>
+                        <a href="/tags/图集/">
+                          <i class="fa fa-photo" aria-hidden="true"></i>
+                          图集
+                        </a>
+                      </li>
+                    
+                  </ul>
+                
+              </li>
+            
+              <li>
+                <a href="/comment/">
+                  <span class="faa-parent animated-hover">
+                    <i class="fa  fa-pencil-square-o faa-tada" aria-hidden="true"></i>
+                    留言板
+                  </span>
+                </a>
+                
+              </li>
+            
+              <li>
+                <a href="/links/">
+                  <span class="faa-parent animated-hover">
+                    <i class="fa  fa-link faa-shake" aria-hidden="true"></i>
+                    友人帐
+                  </span>
+                </a>
+                
+              </li>
+            
+              <li>
+                <a href="/donate/">
+                  <span class="faa-parent animated-hover">
+                    <i class="fa  fa-heart faa-pulse" aria-hidden="true"></i>
+                    赞赏
+                  </span>
+                </a>
+                
+              </li>
+            
+              <li>
+                <a href="/">
+                  <span class="faa-parent animated-hover">
+                    <i class="fa  fa-leaf faa-wrench" aria-hidden="true"></i>
+                    关于
+                  </span>
+                </a>
+                
+                  <ul class="sub-menu">
+                    
+                      <li>
+                        <a href="/about/">
+                          <i class="fa fa-meetup" aria-hidden="true"></i>
+                          我？
+                        </a>
+                      </li>
+                    
+                      <li>
+                        <a href="/theme-sakura/">
+                          <i class="fa iconfont icon-sakura" aria-hidden="true"></i>
+                          主题
+                        </a>
+                      </li>
+                    
+                      <li>
+                        <a href="/lab/">
+                          <i class="fa fa-cogs" aria-hidden="true"></i>
+                          Lab
+                        </a>
+                      </li>
+                    
+                  </ul>
+                
+              </li>
+            
+              <li>
+                <a href="/client/">
+                  <span class="faa-parent animated-hover">
+                    <i class="fa  fa-android faa-vertical" aria-hidden="true"></i>
+                    客户端
+                  </span>
+                </a>
+                
+              </li>
+            
+              <li>
+                <a href="/atom.xml">
+                  <span class="faa-parent animated-hover">
+                    <i class="fa  fa-rss faa-pulse" aria-hidden="true"></i>
+                    RSS
+                  </span>
+                </a>
+                
+              </li>
+            
+          </ul>
+        </nav>
+      </div>
+    </div>
+  </div>
+</header>
+
+      <link rel="stylesheet" type="text/css" href="/css/sharejs.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/tocbot/4.4.2/tocbot.css">
+<div class="pattern-center-blank"></div>
+
+  <div class="pattern-center single-center">
+    <!-- 有配图默认渲染第一张 -->
+    <div class="pattern-attachment-img lazyload" style="background-image: url(https://cdn.jsdelivr.net/gh/pengjunlee/picture-warehouse/java-design-pattern/design-pattern15.png);" src="https://cdn.jsdelivr.net/gh/pengjunlee/picture-warehouse/img/orange.progress-bar-stripe-loader.svg" data-src="https://cdn.jsdelivr.net/gh/pengjunlee/picture-warehouse/java-design-pattern/design-pattern15.png">
+    </div>
+    <header class="pattern-header single-header">
+      <h1 class="entry-title">
+      Java设计模式系列之--动态代理模式（上）</h1>
+      <p class="entry-census">
+        <span>
+          <a href="pengjunlee">
+            <img src="https://cdn.jsdelivr.net/gh/pengjunlee/picture-warehouse/img/logo.jpg">
+          </a>
+        </span>
+        <span>
+          <a href="pengjunlee">李朋军</a>
+        </span>
+        <span class="bull">
+        ·</span>
+        2020-5-24<span class="bull">
+        ·</span>
+      <span id="busuanzi_value_page_pv"></span>次阅读</p>
+    </header>
+  </div>
+
+<div id="content" class="site-content">
+  <div id="primary" class="content-area">
+    <main id="main" class="site-main" role="main">
+      <article id="post-1" class="post-1 post type-post status-publish format-standard has-post-thumbnail hentry category-uncategorized">
+        <div class="toc"></div>
+        <!--<div class="toc-entry-content"><!-- 套嵌目录使用（主要为了支援评论）-->
+        
+        <div class="entry-content">
+          <h1 id="一、什么是动态代理"><a href="#一、什么是动态代理" class="headerlink" title="一、什么是动态代理"></a>一、什么是动态代理</h1><p>在静态代理(Static Proxy)模式中，代理类都是真实存在的，由程序员提前创建好的java类，是静态的，每一个代理类在编译之后都会生成一个.class字节码文件，静态代理类所实现的接口和所代理的方法早在编译期都已被固定了。</p>
+<p>动态代理(Dynamic Proxy)则不同：动态代理使用字节码动态生成和加载技术，在系统运行时动态地生成和加载代理类。</p>
+<p>与静态代理相比，动态代理有以下优点：</p>
+<ul>
+<li>首先，无需再为每一个真实主题写一个形式上完全一样的代理类，假如抽象主题接口中的方法很多的话，为每一个接口方法写一个代理方法也很麻烦，同样地，如果后期抽象主题接口发生变动，则真实主题和代理类都要修改，不利于系统维护；</li>
+<li>其次，动态代理可以让系统根据实际需要来动态创建代理类，同一个代理类能够代理多个不同的真实主题类，并且可以代理多个不同的方法。</li>
+</ul>
+<h1 id="二、Java对动态代理的支持"><a href="#二、Java对动态代理的支持" class="headerlink" title="二、Java对动态代理的支持"></a>二、Java对动态代理的支持</h1><p>从JDK 1.3版本开始，Java语言提供了对动态代理的支持，在Java中实现动态代理机制，需要用到 java.lang.reflect 包中的 InvocationHandler 接口和 Proxy 类,我们先来看看java的API帮助文档是怎么样对这两个类进行描述的：</p>
+<h2 id="InvocationHandler"><a href="#InvocationHandler" class="headerlink" title="InvocationHandler"></a>InvocationHandler</h2><pre><code>InvocationHandler is the interface implemented by the invocation handler of a proxy instance. 
+Each proxy instance has an associated invocation handler. When a method is invoked on a proxy instance, the 
+method invocation is encoded and dispatched to the invoke method of its invocation handler.
+</code></pre><p>大致的意思是：</p>
+<pre><code>InvocationHandler 是代理实例的调用处理程序实现的接口。
+每个代理实例都具有一个与之关联的调用处理程序。对代理实例调用方法时，将对方法调用进行编码并将其指派到它的调用处理程
+序的 invoke() 方法。
+</code></pre><p>invoke() 方法形式如下：  </p>
+<pre><code>Object invoke(Object proxy,Method method,Object[] args) throws Throwable
+</code></pre><p>InvocationHandler 接口只包含invoke()这唯一一个方法，该方法用于处理对代理类实例的方法调用并返回相应的结果，当一个代理实例中的业务方法被调用时将自动调用该方法。invoke()方法包含三个参数，其中第一个参数proxy表示代理类的实例，第二个参数method表示需要代理的方法，第三个参数args表示代理方法的参数数组。 </p>
+<h2 id="Proxy"><a href="#Proxy" class="headerlink" title="Proxy"></a>Proxy</h2><pre><code>Proxy provides static methods for creating dynamic proxy classes and instances, and it is also the
+superclass of all dynamic proxy classes created by those methods.
+</code></pre><p>大致的意思是：</p>
+<p>Proxy 提供用于创建动态代理类和实例的静态方法，它还是由这些方法创建的所有动态代理类的超类。<br>Proxy提供给我们的静态方法有以下四个：  </p>
+<pre><code>//返回指定代理实例的调用处理程序。
+static InvocationHandler getInvocationHandler(Object proxy) 
+
+//返回代理类的 java.lang.Class 对象，并向其提供类加载器和接口数组。
+static Class&lt;?&gt;    getProxyClass(ClassLoader loader, Class&lt;?&gt;[] interfaces) 
+
+//当且仅当指定的类通过 getProxyClass 方法或 newProxyInstance 方法动态生成为代理类时，返回 true。
+static boolean    isProxyClass(Class&lt;?&gt; cl) 
+
+//返回一个指定接口的代理类实例，该接口可以将方法调用指派到指定的调用处理程序。
+//方法中的 ClassLoader loader 参数用来指定动态代理类的类加载器，Class&lt;?&gt;[] interfaces用来指定动态代理类要实现的接口。
+//InvocationHandler h 用来指定与即将生成的动态代理对象相关联的调用处理程序
+static Object newProxyInstance(ClassLoader loader, Class&lt;?&gt;[] interfaces, InvocationHandler h) 
+</code></pre><p>下面我们以为数据库增加日志记录功能（为简单起见，我们仅记录下所有操作的执行时间及操作执行的结果）为例来看一看如何使用这两个类实现动态代理：</p>
+<p>为了使演示更清晰，在此先定义两个简单类，一个User类和一个Document类分别表示数据库中的用户记录和文档记录，其代码如下。  </p>
+<pre><code>public class User {
+    // 用户在数据库中的ID
+    private Long id;
+    // 用户的姓名
+    private String name;
+    public User(Long id, String name) {
+        super();
+        this.id = id;
+        this.name = name;
+    }
+    public Long getId() {
+        return id;
+    }
+    public void setId(Long id) {
+        this.id = id;
+    }
+    public String getName() {
+        return name;
+    }
+    public void setName(String name) {
+        this.name = name;
+    }
+}
+</code></pre><p><br></p>
+<pre><code>public class Document {
+    // 文档在数据库中的ID
+    private Long id;
+    // 文档的标题
+    private String title;
+    public Document(Long id, String title) {
+        super();
+        this.id = id;
+        this.title = title;
+    }
+    public Long getId() {
+        return id;
+    }
+    public void setId(Long id) {
+        this.id = id;
+    }
+    public String getTitle() {
+        return title;
+    }
+    public void setTitle(String title) {
+        this.title = title;
+    }
+}
+</code></pre><p>另外还需定义一个DataBase类用来扮演数据库的功能，在此为简单起见，将数据库中的用户记录和文档记录分别存储在一个Map中，代码如下。 </p>
+<pre><code>import java.util.HashMap;
+import java.util.Map;
+public class DataBase {
+    private static Map&lt;Long, User&gt; userMap = null;
+    private static Map&lt;Long, Document&gt; documentMap = null;
+    // 用来记录当前登陆用户信息
+    private static User currentUser = null;
+
+    private DataBase() {
+        // 数据初始化，为数据库中增加几条用户记录。。。
+        userMap = new HashMap&lt;Long, User&gt;();
+        userMap.put(20160708L, new User(20160708L, &quot;燕凌娇&quot;));
+        userMap.put(20160709L, new User(20160709L, &quot;姬如雪&quot;));
+        userMap.put(20160710L, new User(20160710L, &quot;百里登风&quot;));
+        // 数据初始化，为数据库中增加几条文档记录。。。
+        documentMap = new HashMap&lt;Long, Document&gt;();
+        documentMap.put(30160708L, new Document(30160708L, &quot;C++常用算法手册&quot;));
+        documentMap.put(30160709L, new Document(30160709L, &quot;深入理解Android内核设计思想&quot;));
+        documentMap.put(30160710L, new Document(30160710L, &quot;Java从入门到放弃&quot;));
+    }
+
+    public User getCurrentUser() {
+        return currentUser;
+    }
+
+    public void setCurrentUser(User currentUser) {
+        DataBase.currentUser = currentUser;
+    }
+
+    public Map&lt;Long, User&gt; getUserMap() {
+        return userMap;
+    }
+
+    public Map&lt;Long, Document&gt; getDocumentMap() {
+        return documentMap;
+    }
+
+    public static DataBase getDataBaseInstance() {
+        return DataBaseHolder.dataBase;
+    }
+
+    public static class DataBaseHolder {
+        private static DataBase dataBase = new DataBase();
+    }
+}
+</code></pre><p>数据库布置完成了，接下来开始写动态代理相关代码了，为了与静态代理进行比较，在此我们来创建两个接口（抽象主题角色）。 </p>
+<pre><code>public interface UserDao {
+    // 登陆数据库，为了演示方便将字符串作为执行结果返回
+    String login(Long id);
+    // 退出数据库，为了演示方便将字符串作为执行结果返回
+    String logout();
+}
+</code></pre><p><br></p>
+<pre><code>public interface DocumentDao {
+    // 新增文档，为了演示方便将字符串作为执行结果返回
+    String add(Document document);
+    // 删除文档，为了演示方便将字符串作为执行结果返回
+    String delete(Document document);
+}
+</code></pre><p>接下来是两个真实主题角色，ImpUserDao 类和ImpDocumentDao类，为了使示例结果清晰，此处将接口的执行结果直接以字符串形式返回。</p>
+<pre><code>public class ImpUserDao implements UserDao {
+    @Override
+    public String login(Long id) {
+        User user = DataBase.getDataBaseInstance().getUserMap().get(id);
+        if (null != user) {
+            // 数据库有此用户的信息，则允许登陆...
+            DataBase.getDataBaseInstance().setCurrentUser(user);
+            return &quot;用户[&quot; + user.getName() + &quot;]登陆成功...&quot;;
+        } else {
+            // 数据库没有此用户信息，则不让登陆...
+            return &quot;登陆失败，ID为\&quot;&quot; + id + &quot;\&quot;的用户不存在！&quot;;
+        }
+    }
+
+    @Override
+    public String logout() {
+        User user = DataBase.getDataBaseInstance().getCurrentUser();
+        if (null != user) {
+            // 若当前有用户登陆，则退出成功...
+            DataBase.getDataBaseInstance().setCurrentUser(null);
+            return &quot;用户[&quot; + user.getName() + &quot;]退出登陆成功...&quot;;
+        } else {
+            // 若当前无用户登陆，则退出失败...
+            return &quot;退出登陆失败，当前无登陆用户！&quot;;
+        }
+    }
+}
+</code></pre><p><br></p>
+<pre><code>public class ImpDocumentDao implements DocumentDao {
+    @Override
+    public String add(Document document) {
+        User user = DataBase.getDataBaseInstance().getCurrentUser();
+        if (null == user) {
+            // 若当前用户未登陆，则新增文档失败...
+            return &quot;保存失败，未获取到登陆信息！&quot;;
+        } else {
+            Document dbDocument = DataBase.getDataBaseInstance().getDocumentMap().get(document.getId());
+            if (null != dbDocument) {
+                // 若数据库中已经存在该ID的文档，则新增文档失败...
+                return &quot;添加文档《&quot; + document.getTitle() + &quot;》失败，文档已存在！&quot;;
+            } else {
+                // 若该ID的文档在数据库不存在，则新增文档成功...
+                DataBase.getDataBaseInstance().getDocumentMap().put(document.getId(), document);
+                return &quot;添加文档《&quot; + document.getTitle() + &quot;》成功...&quot;;
+            }
+        }
+    }
+
+    @Override
+    public String delete(Document document) {
+        User user = DataBase.getDataBaseInstance().getCurrentUser();
+        if (null == user) {
+            // 若当前用户未登陆，则新增文档失败...
+            return &quot;保存失败，未获取到登陆信息！&quot;;
+        } else {
+            Document dbDocument = DataBase.getDataBaseInstance().getDocumentMap().get(document.getId());
+            if (null == dbDocument) {
+                // 若数据库中该文档不存在，则删除文档失败...
+                return &quot;删除文档《&quot; + document.getTitle() + &quot;》失败，文档不存在！&quot;;
+            } else {
+                // 若数据库中该文档存在，则删除文档成功...
+                DataBase.getDataBaseInstance().getDocumentMap().remove(document.getId());
+                return &quot;删除文档《&quot; + document.getTitle() + &quot;》成功...&quot;;
+            }
+        }
+    }
+}
+</code></pre><p>最后，我们就要定义动态代理类了，前面说过，每一个动态代理类都必须要实现 InvocationHandler 这个接口，因此我们这个动态代理类也不例外。 </p>
+<pre><code>import java.lang.reflect.InvocationHandler;
+import java.lang.reflect.Method;
+import java.util.Calendar;
+import java.util.GregorianCalendar;
+
+public class DataBaseLogHandler implements InvocationHandler {
+    private Object object;
+    private Calendar calendar;
+
+    public DataBaseLogHandler(Object object) {
+        super();
+        this.object = object;
+    }
+
+    // invoke()方法用于处理对代理类实例的方法调用并返回相应的结果
+    @Override
+    public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
+        before(method);
+        // 继续转发请求给内部真实主题角色
+        Object result = method.invoke(object, args);
+        after(result);
+        if (method.getName().equalsIgnoreCase(&quot;logout&quot;)) {
+            System.out.println(&quot;$$$$$$$$$$$$$$$$$$$$$$$$&quot;);
+            System.out.println(&quot;&quot;);
+        }
+        return result;
+    }
+
+    public void before(Method method) {
+        calendar = new GregorianCalendar();
+        int year = calendar.get(Calendar.YEAR);
+        int month = calendar.get(Calendar.MONTH);
+        int date = calendar.get(Calendar.DATE);
+        int hour = calendar.get(Calendar.HOUR_OF_DAY);
+        int minute = calendar.get(Calendar.MINUTE);
+        int second = calendar.get(Calendar.SECOND);
+        String time = hour + &quot;时&quot; + minute + &quot;分&quot; + second + &quot;秒&quot;;
+        System.out.println(&quot;北京时间：&quot; + year + &quot;年&quot; + month + &quot;月&quot; + date + &quot;日&quot; + time + &quot;,执行方法\&quot;&quot; + method.getName() + &quot;\&quot;&quot;);
+    }
+
+    public void after(Object object) {
+        System.out.println(&quot;执行结果:&quot; + object);
+    }
+}
+</code></pre><p>至此，动态代理所需要的类就算创建完成了，接下来创建一个Client充当客户端来测试一下。</p>
+<pre><code>import java.lang.reflect.Proxy;
+
+public class MainClass {
+    public static void main(String[] args) {
+        // 此处来创建了两个动态代理类对象...
+        UserDao userDao = new ImpUserDao();
+        DataBaseLogHandler userHandler = new DataBaseLogHandler(userDao);
+        DocumentDao doucumentDao = new ImpDocumentDao();
+        DataBaseLogHandler documentHandler = new DataBaseLogHandler(doucumentDao);
+        UserDao userProxy = (UserDao) Proxy.newProxyInstance(UserDao.class.getClassLoader(),
+                new Class[] { UserDao.class }, userHandler);
+        DocumentDao documentProxy = (DocumentDao) Proxy.newProxyInstance(DocumentDao.class.getClassLoader(),
+                new Class[] { DocumentDao.class }, documentHandler);
+        // 先输入一个不存在的用户Id登陆试试...
+        userProxy.login(20160718L);
+        documentProxy.add(new Document(30160711L, &quot;转角遇见幸福&quot;));
+        userProxy.logout();
+        // 再用一个真实用户Id登陆试试...
+        userProxy.login(20160708L);
+        documentProxy.add(new Document(30160711L, &quot;转角遇见幸福&quot;));
+        documentProxy.add(new Document(30160711L, &quot;转角遇见幸福&quot;));
+        userProxy.logout();
+    }
+}
+</code></pre><p>运行程序打印结果如下： </p>
+<p>北京时间：2016年6月11日19时33分46秒,执行方法”login”<br>执行结果:登陆失败，ID为”20160718”的用户不存在！<br>北京时间：2016年6月11日19时33分46秒,执行方法”add”<br>执行结果:保存失败，未获取到登陆信息！<br>北京时间：2016年6月11日19时33分46秒,执行方法”logout”<br>执行结果:退出登陆失败，当前无登陆用户！<br>$$$$$$$$$$$$$$$$$$$$$$$$</p>
+<p>北京时间：2016年6月11日19时33分46秒,执行方法”login”<br>执行结果:用户[燕凌娇]登陆成功…<br>北京时间：2016年6月11日19时33分46秒,执行方法”add”<br>执行结果:添加文档《转角遇见幸福》成功…<br>北京时间：2016年6月11日19时33分46秒,执行方法”add”<br>执行结果:添加文档《转角遇见幸福》失败，文档已存在！<br>北京时间：2016年6月11日19时33分46秒,执行方法”logout”<br>执行结果:用户[燕凌娇]退出登陆成功…<br>$$$$$$$$$$$$$$$$$$$$$$$$ </p>
+<p>从以上程序的最终运行结果可以看出：通过使用JDK自带的动态代理，我们同时实现了对ImpUserDao和ImpDocumentDao两个真实主题类的统一代理和集中控制。至于该动态代理类是如何被创建的？将在下一篇文章详细讨论，接下来我们先看看如何使用CGLIB实现动态代理。  </p>
+<h1 id="三、使用CGLIB实现动态代理"><a href="#三、使用CGLIB实现动态代理" class="headerlink" title="三、使用CGLIB实现动态代理"></a>三、使用CGLIB实现动态代理</h1><p>生成动态代理类的方法很多，如上例中JDK自带的动态代理、CGLIB、Javassist 或者 ASM 库。JDK 的动态代理使用简单，它内置在 JDK 中，因此不需要引入第三方 Jar 包，但相对功能比较弱。CGLIB 和 Javassist 都是高级的字节码生成库，总体性能比 JDK 自带的动态代理好，而且功能十分强大。ASM 是低级的字节码生成工具，使用 ASM 已经近乎于在使用 Java bytecode 编程，对开发人员要求最高，当然，也是性能最好的一种动态代理生成工具。但 ASM 的使用很繁琐，而且性能也没有数量级的提升，与 CGLIB 等高级字节码生成工具相比，ASM 程序的维护性较差，如果不是在对性能有苛刻要求的场合，还是推荐 CGLIB 或者 Javassist。</p>
+<p>接下来我们继续用上面的例子来体验一下如何使用CGLIB实现动态代理。</p>
+<p>首先，使用CGLIB来实现动态代理需引入“asm.jar”(CGLIB的底层是使用ASM实现的)和“cglib.jar”两个第三方jar包,引入两个jar包时需注意其版本，若版本有冲突会出现以下异常：<font color="red"> Exception in thread “main” java.lang.NoSuchMethodError: org.objectweb.asm.ClassWriter.<init>(I)V </init></font></p>
+<p>接下来开始写代码，延用上例中的：User类、Document类、DataBase类、两个抽象主题接口UserDao和DocumentDao、两个真实主题角色类ImpUserDao和ImpDocumentDao，这几个类无需做任何修改，此处不再重复贴出。</p>
+<p>去掉上例中的 DataBaseLogHandler 类，新增一个 CglibProxy 类，该类需实现CGLIB的 MethodInterceptor(方法拦截) 接口。 </p>
+<pre><code>import java.lang.reflect.Method;
+import java.util.Calendar;
+import java.util.GregorianCalendar;
+import net.sf.cglib.proxy.Enhancer;
+import net.sf.cglib.proxy.MethodInterceptor;
+import net.sf.cglib.proxy.MethodProxy;
+
+public class CglibProxy implements MethodInterceptor {
+    private Calendar calendar;
+
+    /**
+     * 创建动态代理类对象
+     *
+     * @param clazz
+     *            需要创建子类代理的父类的类型
+     * 
+     * @return
+     */
+    public Object getProxyInstance(Class&lt;?&gt; clazz) {
+        Enhancer enhancer = new Enhancer();
+        // 设置要创建的动态代理类的父类
+        enhancer.setSuperclass(clazz);
+        // 设置回调的对象，此句会导致调用动态代理类对象的方法会被指派到CglibProxy对象的intercept()方法
+        enhancer.setCallback(this);
+        // 通过字节码技术动态创建动态代理类实例
+        return enhancer.create();
+    }
+
+    @Override
+    // 回调方法
+    public Object intercept(Object obj, Method method, Object[] args, MethodProxy proxy) throws Throwable {
+        before(method);
+        // 通过动态子类代理实例调用父类的方法
+        Object result = proxy.invokeSuper(obj, args);
+        after(result);
+        if (method.getName().equalsIgnoreCase(&quot;logout&quot;)) {
+            System.out.println(&quot;**********************************&quot;);
+            System.out.println(&quot;&quot;);
+        }
+        return result;
+    }
+
+    public void before(Method method) {
+        calendar = new GregorianCalendar();
+        int year = calendar.get(Calendar.YEAR);
+        int month = calendar.get(Calendar.MONTH);
+        int date = calendar.get(Calendar.DATE);
+        int hour = calendar.get(Calendar.HOUR_OF_DAY);
+        int minute = calendar.get(Calendar.MINUTE);
+        int second = calendar.get(Calendar.SECOND);
+        String time = hour + &quot;时&quot; + minute + &quot;分&quot; + second + &quot;秒&quot;;
+        System.out
+                .println(&quot;北京时间：&quot; + year + &quot;年&quot; + month + &quot;月&quot; + date + &quot;日&quot; + time + &quot;,执行方法\&quot;&quot; + method.getName() + &quot;\&quot;&quot;);
+    }
+
+    public void after(Object object) {
+        System.out.println(&quot;执行结果:&quot; + object);
+    }
+}
+</code></pre><p>对客户端进行相应修改，如下。 </p>
+<pre><code>public class MainClass {
+    public static void main(String[] args) {
+        // 创建一个CglibProxy代理类对象，用来创建子类代理实例
+        CglibProxy cglib = new CglibProxy();
+        // 为ImpUserDao类添加一个动态代理类对象，即子类代理对象
+        UserDao userProxy = (UserDao) cglib.getProxyInstance(ImpUserDao.class);
+        // 为ImpDocumentDao类添加一个动态代理类对象，即子类代理对象
+        DocumentDao documentProxy = (DocumentDao) cglib.getProxyInstance(ImpDocumentDao.class);
+        // 先输入一个不存在的用户Id登陆试试...
+        userProxy.login(20160718L);
+        documentProxy.add(new Document(30160711L, &quot;转角遇见幸福&quot;));
+        userProxy.logout();
+        // 再用一个真实用户Id登陆试试...
+        userProxy.login(20160708L);
+        documentProxy.add(new Document(30160711L, &quot;转角遇见幸福&quot;));
+        documentProxy.add(new Document(30160711L, &quot;转角遇见幸福&quot;));
+        userProxy.logout();
+    }
+}
+</code></pre><p>运行程序结果打印如下，与之前使用JDK自带动态代理程序运行结果完全相同： </p>
+<p>北京时间：2016年6月12日20时22分35秒,执行方法”login”<br>执行结果:登陆失败，ID为”20160718”的用户不存在！<br>北京时间：2016年6月12日20时22分35秒,执行方法”add”<br>执行结果:保存失败，未获取到登陆信息！<br>北京时间：2016年6月12日20时22分35秒,执行方法”logout”<br>执行结果:退出登陆失败，当前无登陆用户！<br>$$$$$$$$$$$$$$$$$$$$$$$$<br>北京时间：2016年6月12日20时22分35秒,执行方法”login”<br>执行结果:用户[燕凌娇]登陆成功…<br>北京时间：2016年6月12日20时22分35秒,执行方法”add”<br>执行结果:添加文档《转角遇见幸福》成功…<br>北京时间：2016年6月12日20时22分35秒,执行方法”add”<br>执行结果:添加文档《转角遇见幸福》失败，文档已存在！<br>北京时间：2016年6月12日20时22分35秒,执行方法”logout”<br>执行结果:用户[燕凌娇]退出登陆成功…<br>$$$$$$$$$$$$$$$$$$$$$$$$  </p>
+<blockquote>
+<p>PS:CGLib创建的动态代理对象性能比JDK创建的动态代理对象的性能高不少，但是CGLib在创建代理对象时所花费的时间却比JDK多得多，所以对于单例的对象，因为无需频繁创建对象，用CGLib合适，反之，使用JDK方式要更为合适一些。同时，由于CGLib采用动态创建子类的方法来对被代理的父类的功能进行增强和代理，所以，无法对被声明为final的类或方法进行代理。  </p>
+</blockquote>
+<h1 id="四、动态代理模式的特点"><a href="#四、动态代理模式的特点" class="headerlink" title="四、动态代理模式的特点"></a>四、动态代理模式的特点</h1><p>动态代理类使用字节码动态生成加载技术，在运行时生成并加载代理类。与静态代理相比，<strong>动态代理具有以下优点：</strong></p>
+<ul>
+<li>无需单独为每一个接口添加一个代理类，使用动态代理可以一次性为多个接口实现代理。</li>
+<li>无需逐个为接口中的所有方法添加实现，使用动态代理可以一次性为多个接口中的所有方法实现代理，在接口方法数量比较多的时候，可以避免出现大量的重复代码。</li>
+</ul>
+<p><strong>动态代理的缺点：</strong>  </p>
+<p>目前，JDK中提供的动态代理只能对接口实现代理，无法代理未实现接口的类。如果需要动态代理未实现接口的类，必须借助第三方工具，如：CGLib(Code Generation Library)等。</p>
+<h1 id="参考文章"><a href="#参考文章" class="headerlink" title="参考文章"></a>参考文章</h1><p><a href="https://www.cnblogs.com/xiaoluo501395377/p/3383130.html" title="java的动态代理机制详解" target="_blank" rel="noopener">https://www.cnblogs.com/xiaoluo501395377/p/3383130.html</a></p>
+<p><a href="https://www.ibm.com/developerworks/cn/java/j-lo-proxy-pattern/" title="代理模式原理及实例讲解" target="_blank" rel="noopener">https://www.ibm.com/developerworks/cn/java/j-lo-proxy-pattern/</a></p>
+<p><a href="http://www.lxway.com/4445954962.htm" title="代理模式详解包含原理详解" target="_blank" rel="noopener">http://www.lxway.com/4445954962.htm</a></p>
+<p><a href="https://blog.csdn.net/lovelion/article/details/8116704" title="Java动态代理的实现" target="_blank" rel="noopener">https://blog.csdn.net/lovelion/article/details/8116704</a></p>
+<p><a href="https://blog.csdn.net/hejingyuan6/article/details/36203505" title="JAVA学习篇--静态代理VS动态代理" target="_blank" rel="noopener">https://blog.csdn.net/hejingyuan6/article/details/36203505</a></p>
+<p><a href="https://blog.csdn.net/rokii/article/details/4046098" title="深入理解Java Proxy机制" target="_blank" rel="noopener">https://blog.csdn.net/rokii/article/details/4046098</a></p>
+
+        </div>
+        <!-- .entry-content -->
+        <div class="single-reward">
+          <div class="reward-open">赏
+            <div class="reward-main">
+              <ul class="reward-row">
+                <li class="alipay-code"><img src="https://cdn.jsdelivr.net/gh/pengjunlee/picture-warehouse/img/AliPayQR.jpg"></li>
+                <li class="wechat-code"><img src="https://cdn.jsdelivr.net/gh/pengjunlee/picture-warehouse/img/WeChanQR.jpg"></li>
+              </ul>
+            </div>
+          </div>
+        </div>
+        <div style="text-align:center; width: 100%" class="social-share share-mobile" data-disabled="diandian, tencent"></div>
+        <footer class="post-footer">
+          <div class="post-lincenses"><a href="https://creativecommons.org/licenses/by-nc-sa/4.0/deed.zh" target="_blank" rel="nofollow"><i class="fa fa-creative-commons" aria-hidden="true"></i> 知识共享署名-非商业性使用-相同方式共享 4.0 国际许可协议</a></div>
+          <div class="post-tags">
+          </div>
+          <div class="post-share">
+            <div class="social-share sharehidden share-component"></div>
+            <i class="iconfont show-share icon-forward"></i>
+          </div>
+        </footer><!-- .entry-footer -->
+      </article>
+      <!-- #post-## -->
+      <div class="toc" style="background: none;"></div>
+      <section class="post-squares nextprev">
+        
+          
+            <div class="post-nepre half previous">
+          
+            <a href="/2020/05/24/Java设计模式之--动态代理模式（下）/" rel="prev">
+              <div class="background">
+                <img class="lazyload" src="https://cdn.jsdelivr.net/gh/pengjunlee/picture-warehouse/img/orange.progress-bar-stripe-loader.svg" data-src="https://cdn.jsdelivr.net/gh/pengjunlee/picture-warehouse/java-design-pattern/design-pattern15.png" style="width: 100%; height: 100%; object-fit: cover; pointer-events: none;" onerror="imgError(this,3)" src="https://cdn.jsdelivr.net/gh/pengjunlee/picture-warehouse/java-design-pattern/design-pattern15.png">
+              </div>
+              <span class="label">
+              Previous Post</span>
+              <div class="info">
+                <h3>
+                Java设计模式系列之--动态代理模式（下）</h3>
+                <hr>
+              </div>
+            </a>
+          </div>
+        
+        
+          
+            <div class="post-nepre half next">
+          
+            <a href="/2020/05/24/Java设计模式之--静态代理模式/" rel="next">
+              <div class="background">
+                <img class="lazyload" src="https://cdn.jsdelivr.net/gh/pengjunlee/picture-warehouse/img/orange.progress-bar-stripe-loader.svg" data-src="https://cdn.jsdelivr.net/gh/pengjunlee/picture-warehouse/java-design-pattern/design-pattern15.png" style="width: 100%; height: 100%; object-fit: cover; pointer-events: none;" onerror="imgError(this,3)" src="https://cdn.jsdelivr.net/gh/pengjunlee/picture-warehouse/java-design-pattern/design-pattern15.png">
+              </div>
+              <span class="label">
+              Next Post</span>
+              <div class="info">
+                <h3>
+                Java设计模式系列之--静态代理模式</h3>
+                <hr>
+              </div>
+            </a>
+          </div>
+        
+      </section>
+      
+<div id="vcomments"></div>
+<script>
+  window.onload = function(){
+      var valine = new Valine();
+      valine.init({
+        el: '#vcomments',
+        appId: "k0QcRvFFw7AovKS8un6pys2S-gzGzoHsz",
+        appKey: "Y5w42nyHhdKlYHT00svHuIya",
+        path: window.location.pathname,
+        placeholder: "你是我一生只会遇见一次的惊喜 ..."
+      })
+  }
+</script>
+
+      <section class="author-profile">
+        <div class="info" itemprop="author" itemscope="" itemtype="https://schema.org/Person">
+          <a href="pengjunlee" class="profile gravatar"><img src="https://cdn.jsdelivr.net/gh/pengjunlee/picture-warehouse/img/logo.jpg" itemprop="image" alt="李朋军" height="70" width="70"></a>
+          <div class="meta">
+            <span class="title">Author</span>
+            <h3 itemprop="name">
+            <a href="pengjunlee" itemprop="url" rel="author">李朋军</a>
+            </h3>
+          </div>
+        </div>
+        <hr>
+        <p><i class="iconfont icon-write"></i>为他人带来阳光的人，自己也一定会沐浴在阳光下。</p>
+      </section>
+    </main><!-- #main -->
+  </div><!-- #primary -->
+</div>
+
+
+
+    </div>    
+    <div class="ins-search">
+    <div class="ins-search-mask"></div>
+    <div class="ins-search-container">
+        <div class="ins-input-wrapper">
+            <input type="text" class="ins-search-input" placeholder="请输入关键词..."/>
+            <span class="ins-close ins-selectable"><i class="fa fa-times-circle"></i></span>
+        </div>
+        <div class="ins-section-wrapper">
+            <div class="ins-section-container"></div>
+        </div>
+    </div>
+</div>
+<script>
+(function (window) {
+    var INSIGHT_CONFIG = {
+        TRANSLATION: {
+            POSTS: '文章',
+            // PAGES: '页面',
+            CATEGORIES: '分类',
+            TAGS: '标签',
+        },
+        ROOT_URL: '/',
+        CONTENT_URL: '/content.json',
+    };
+    window.INSIGHT_CONFIG = INSIGHT_CONFIG;
+})(window);
+</script>
+    <!-- <footer id="footer">
+  
+  <div class="outer">
+    <div id="footer-info" class="inner">
+      &copy; 2023 pengjunlee<br>
+      powered_by <a href="http://hexo.io/" target="_blank">Hexo</a>
+    </div>
+  </div>
+</footer> -->
+<footer id="colophon" class="site-footer" role="contentinfo">
+  <div class="site-info">
+    <div class="footertext">
+      <div class="img-preload">
+        <img src="https://cdn.jsdelivr.net/gh/honjun/cdn@1.6/img/other/wordpress-rotating-ball-o.svg">
+        <img src="https://cdn.jsdelivr.net/gh/honjun/cdn@1.6/img/other/disqus-preloader.svg">
+      </div>
+      <p style="color: #666666;">&copy 2018</p>
+    </div>
+    <div class="footer-device">
+    <p style="font-family: 'Ubuntu', sans-serif;">
+        <span style="color: #b9b9b9;">Theme <a href="https://github.com/honjun/hexo-theme-sakura" target="_blank" style="color: #b9b9b9;;text-decoration: underline dotted rgba(0, 0, 0, .1);">Sakura</a> <i class="iconfont icon-sakura rotating" style="color: #ffc0cb;display:inline-block"></i> by <a href="https://2heng.xin/" target="_blank" style="color: #b9b9b9;;text-decoration: underline dotted rgba(0, 0, 0, .1);">Mashiro</a>&<a href="https://www.hojun.cn/" target="_blank" style="color: #b9b9b9;;text-decoration: underline dotted rgba(0, 0, 0, .1);">Hojun</a>, Powered by Hexo, Hosted by Coding Pages</a>
+        </span>
+      </p>
+    </div>
+  </div><!-- .site-info -->
+</footer>
+
+
+
+<!-- <script src="/js/tocbot.js"></script> -->
+<script type="text/javascript" src="/js/lib.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/clipboard@2/dist/clipboard.min.js"></script>
+<script type="text/javascript" src="/js/InsightSearch.js"></script>
+<script type="text/javascript" src="/js/jquery.fancybox.min.js"></script>
+<script type="text/javascript" src="/js/zoom.min.js"></script>
+<script type="text/javascript" src="/js/sakura-app.js"></script>
+<script src="//cdn1.lncld.net/static/js/3.0.4/av-min.js"></script>
+<script src='//unpkg.com/valine@1.3.4/dist/Valine.min.js'></script>
+<script src="/js/botui.js"></script>
+<!-- 不蒜子 网页计数器 -->
+<script src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+<!-- <script src="https://cdnjs.cloudflare.com/ajax/libs/tocbot/4.4.2/tocbot.min.js"></script> -->
+<script type="text/javascript">
+/* <![CDATA[ */
+if (/Android|webOS|iPhone|iPod|BlackBerry/i.test(navigator.userAgent)) {
+  var Poi = {"pjax":"1","movies":{"url": "https://cdn.jsdelivr.net/gh/pengjunlee/picture-warehouse/img","name":"Unbroken.mp4","live":"close"},"windowheight":"fixed","codelamp":"close","ajaxurl":"","order":"asc","formpostion":"bottom"};
+} else {
+  var Poi = {"pjax":"1","movies":{"url": "https://cdn.jsdelivr.net/gh/pengjunlee/picture-warehouse/img","name":"Unbroken.mp4","live":"open"},"windowheight":"auto","codelamp":"close","ajaxurl":"","order":"asc","formpostion":"bottom"};
+}
+/* ]]> */
+
+</script>
+<script>
+$(document).ready(function() {
+  if ($(".toc").length > 0 && document.body.clientWidth > 1200) {
+    if ($(".pattern-center").length > 0) { //有图的情况
+      tocbot.init({
+          // Where to render the table of contents.
+          tocSelector: '.toc', // 放置目录的容器
+          // Where to grab the headings to build the table of contents.
+          contentSelector: '.entry-content', // 正文内容所在
+          // Which headings to grab inside of the contentSelector element.
+          scrollSmooth: true,
+          headingSelector: 'h1, h2, h3, h4, h5', // 需要索引的标题级别
+          headingsOffset: -400,
+          scrollSmoothOffset: -85
+      });
+    } else {
+      tocbot.init({
+          // Where to render the table of contents.
+          tocSelector: '.toc', // 放置目录的容器
+          // Where to grab the headings to build the table of contents.
+          contentSelector: '.entry-content', // 正文内容所在
+          // Which headings to grab inside of the contentSelector element.
+          scrollSmooth: true,
+          headingSelector: 'h1, h2, h3, h4, h5', // 需要索引的标题级别
+          headingsOffset: -85,
+          scrollSmoothOffset: -85
+      });
+    }
+    var offsetTop = $('.toc').offset().top - 95;
+    window.onscroll = function() {
+      var scrollTop = window.pageYOffset || document.documentElement.scrollTop || document.body.scrollTop;
+      if (scrollTop >= offsetTop) {
+        $('.toc').addClass('toc-fixed');
+      } else {
+        $('.toc').removeClass('toc-fixed');
+      }
+    }
+  }
+});
+</script>
+
+    <div class="openNav no-select" style="height: 50px;">
+      <div class="iconflat no-select" style="width: 50px; height: 50px;">
+        <div class="icon"></div>
+      </div>
+      <div class="site-branding search-form-submit">
+        <i class="iconfont js-toggle-search iconsearch icon-search"></i>
+      </div>
+    </div>
+  </section>
+  <div id="mo-nav" class="">
+  <div class="m-avatar">
+    <img src="https://cdn.jsdelivr.net/gh/pengjunlee/picture-warehouse/img/avatar.jpg">
+  </div>
+  <p style="text-align: center; color: #333; font-weight: 900; font-family: 'Ubuntu', sans-serif; letter-spacing: 1.5px">李朋军</p>
+  <p style="text-align: center; word-spacing: 20px;">
+    
+      
+        <a href="http://github.com/honjun" class="fa fa-github" target="_blank" style="color: #333; margin-left:20px"></a>
+      
+        <a href="http://weibo.com/mashirozx?is_all=1" class="fa fa-weibo" target="_blank" style="color: #dd4b39; margin-left:20px"></a>
+      
+        <a href="https://wpa.qq.com/msgrd?v=3&uin=954655431&site=qq&menu=yes" class="fa fa-qq" target="_blank" style="color: #25c6fe; margin-left:20px"></a>
+      
+    
+  </p>
+  <ul id="menu-new-1" class="menu">
+    
+      <li>
+        <a href="/">
+          <span class="faa-parent animated-hover">
+            <i class="fa  fa-fort-awesome faa-shake" aria-hidden="true"></i>
+            首页
+          </span>
+        </a>
+        
+      </li>
+    
+      <li>
+        <a href="/archives">
+          <span class="faa-parent animated-hover">
+            <i class="fa  fa-archive faa-shake" aria-hidden="true"></i>
+            归档
+          </span>
+        </a>
+        
+          <ul class="sub-menu">
+            
+              <li>
+                <a href="/categories/编程/">
+                  <i class="fa fa-code" aria-hidden="true"></i>
+                  编程
+                </a>
+              </li>
+            
+              <li>
+                <a href="/categories/技术/">
+                  <i class="fa fa-cogs" aria-hidden="true"></i>
+                  技术
+                </a>
+              </li>
+            
+              <li>
+                <a href="/categories/生活/">
+                  <i class="fa fa-file-text-o" aria-hidden="true"></i>
+                  生活
+                </a>
+              </li>
+            
+              <li>
+                <a href="/categories/资源/">
+                  <i class="fa fa-cloud-download" aria-hidden="true"></i>
+                  资源
+                </a>
+              </li>
+            
+              <li>
+                <a href="/categories/随想/">
+                  <i class="fa fa-commenting-o" aria-hidden="true"></i>
+                  随想
+                </a>
+              </li>
+            
+              <li>
+                <a href="/categories/转载/">
+                  <i class="fa fa-book" aria-hidden="true"></i>
+                  转载
+                </a>
+              </li>
+            
+          </ul>
+        
+      </li>
+    
+      <li>
+        <a href="javascript:;">
+          <span class="faa-parent animated-hover">
+            <i class="fa  fa-list-ul faa-vertical" aria-hidden="true"></i>
+            清单
+          </span>
+        </a>
+        
+          <ul class="sub-menu">
+            
+              <li>
+                <a href="/tags/悦读/">
+                  <i class="fa fa-th-list faa-bounce" aria-hidden="true"></i>
+                  书单
+                </a>
+              </li>
+            
+              <li>
+                <a href="/bangumi/">
+                  <i class="fa fa-film faa-vertical" aria-hidden="true"></i>
+                  番组
+                </a>
+              </li>
+            
+              <li>
+                <a href="/music/">
+                  <i class="fa fa-headphones" aria-hidden="true"></i>
+                  歌单
+                </a>
+              </li>
+            
+              <li>
+                <a href="/tags/图集/">
+                  <i class="fa fa-photo" aria-hidden="true"></i>
+                  图集
+                </a>
+              </li>
+            
+          </ul>
+        
+      </li>
+    
+      <li>
+        <a href="/comment/">
+          <span class="faa-parent animated-hover">
+            <i class="fa  fa-pencil-square-o faa-tada" aria-hidden="true"></i>
+            留言板
+          </span>
+        </a>
+        
+      </li>
+    
+      <li>
+        <a href="/links/">
+          <span class="faa-parent animated-hover">
+            <i class="fa  fa-link faa-shake" aria-hidden="true"></i>
+            友人帐
+          </span>
+        </a>
+        
+      </li>
+    
+      <li>
+        <a href="/donate/">
+          <span class="faa-parent animated-hover">
+            <i class="fa  fa-heart faa-pulse" aria-hidden="true"></i>
+            赞赏
+          </span>
+        </a>
+        
+      </li>
+    
+      <li>
+        <a href="/">
+          <span class="faa-parent animated-hover">
+            <i class="fa  fa-leaf faa-wrench" aria-hidden="true"></i>
+            关于
+          </span>
+        </a>
+        
+          <ul class="sub-menu">
+            
+              <li>
+                <a href="/about/">
+                  <i class="fa fa-meetup" aria-hidden="true"></i>
+                  我？
+                </a>
+              </li>
+            
+              <li>
+                <a href="/theme-sakura/">
+                  <i class="fa iconfont icon-sakura" aria-hidden="true"></i>
+                  主题
+                </a>
+              </li>
+            
+              <li>
+                <a href="/lab/">
+                  <i class="fa fa-cogs" aria-hidden="true"></i>
+                  Lab
+                </a>
+              </li>
+            
+          </ul>
+        
+      </li>
+    
+      <li>
+        <a href="/client/">
+          <span class="faa-parent animated-hover">
+            <i class="fa  fa-android faa-vertical" aria-hidden="true"></i>
+            客户端
+          </span>
+        </a>
+        
+      </li>
+    
+      <li>
+        <a href="/atom.xml">
+          <span class="faa-parent animated-hover">
+            <i class="fa  fa-rss faa-pulse" aria-hidden="true"></i>
+            RSS
+          </span>
+        </a>
+        
+      </li>
+    
+  </ul>
+  <p style="text-align: center; font-size: 13px; color: #b9b9b9;">&copy 2019 hexo-sakura</p>
+</div>
+<button onclick="topFunction()" class="mobile-cd-top" id="moblieGoTop" title="Go to top" style="display: none;"><i class="fa fa-chevron-up" aria-hidden="true"></i></button>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/aplayer/dist/APlayer.min.css">
+<script src="https://cdn.jsdelivr.net/npm/aplayer/dist/APlayer.min.js"></script>
+<!-- require MetingJS -->
+<script src="https://cdn.jsdelivr.net/npm/meting@2/dist/Meting.min.js"></script>
+<style>
+  .aplayer .aplayer-lrc {
+    height: 35px;
+  }
+  .aplayer .aplayer-lrc p{
+    font-size: 16px;
+    font-weight: 700;
+    line-height: 18px !important;
+  }
+  .aplayer .aplayer-lrc p.aplayer-lrc-current{
+    color: #FF1493;
+  }
+  .aplayer.aplayer-narrow .aplayer-body{
+    left: -66px !important;
+  }
+  .aplayer.aplayer-fixed .aplayer-lrc {
+    display: none;
+  }
+  .aplayer .aplayer-lrc.aplayer-lrc-hide {
+      display:none !important;
+  }
+  .aplayer.aplayer-fixed .lrc-show {
+    display: block;
+    background: rgba(255, 255, 255, 0.8);
+  }
+</style>
+<meting-js
+
+    id="2660651585"
+
+    server="netease"
+
+    type="playlist"
+
+    fixed="true"
+
+    autoplay="false"
+
+    loop="all"
+
+    order="random"
+
+    preload="auto"
+
+    volume="0.7"
+
+    mutex="true"
+
+</meting-js>
+<script>
+  $(function(){
+    $('body').on('click', '.aplayer', function(){
+      if($('.aplayer-button').hasClass('aplayer-play')) {
+        $('.aplayer-lrc').removeClass('lrc-show');
+      } else {
+        $('.aplayer-lrc').addClass('lrc-show');
+      }
+    })
+  });
+</script>
+</body>
+</html>

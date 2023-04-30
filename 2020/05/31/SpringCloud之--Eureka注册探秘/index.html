@@ -1,0 +1,1204 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head><meta name="generator" content="Hexo 3.9.0">
+  <meta charset="utf-8">
+  <meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0" name="viewport">
+  
+  <title itemprop="name">SpringCloud系列之--Eureka注册探秘 | 李朋军的个人博客</title>
+  
+    <link rel="shortcut icon" href="/images/favicon.jpg">
+  
+  <meta http-equiv="x-dns-prefetch-control" content="on">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Noto+SerifMerriweather|Merriweather+Sans|Source+Code+Pro|Ubuntu:400,700|Noto+Serif+SC" media="all">
+  <link rel="dns-prefetch" href="//cdn.jsdelivr.net">
+  <link rel="stylesheet" id="saukra_css-css" href="/css/style.css" type="text/css" media="all">
+  <link rel="stylesheet" href="/css/lib.min.css" media="all">
+  <link rel="stylesheet" href="/css/font.css" media="all">
+  <link rel="stylesheet" href="/css/insight.css" media="all">
+  <link rel="stylesheet" href="/css/jquery.fancybox.min.css" media="all">
+  <link rel="stylesheet" href="/css/zoom.css" media="all">
+  <link rel="stylesheet" type="text/css" href="/css/sharejs.css">
+<!--   <link rel="stylesheet" id="saukra_css-css" href="https://2heng.xin/wp-content/cache/autoptimize/css/autoptimize_ad42a61f4c7d4bdd9f91afcff6b5dda5.css
+" type="text/css" media="all"> -->
+  <script>
+  /*Initial Variables*/
+  var mashiro_option = new Object();
+  var mashiro_global = new Object();
+  mashiro_option.NProgressON = true;
+  /* 
+   * 邮箱信息之类的东西可以填在这里，这些js变量基本都作用于sakura-app.js
+   * 这样的设置仅是为了方便在基于PHP开发的主题中设置js变量，既然移植到了Node上，我想或许可以精简这一逻辑吧
+   */
+  mashiro_option.email_domain = "";
+  mashiro_option.email_name = "";
+  mashiro_option.cookie_version_control = "";
+  mashiro_option.qzone_autocomplete = false;
+  mashiro_option.site_name = "李朋军";
+  mashiro_option.author_name = "朋军";
+  mashiro_option.site_url = "http://blog.mtracy.club/";
+  mashiro_option.v_appId = "k0QcRvFFw7AovKS8un6pys2S-gzGzoHsz";
+  mashiro_option.v_appKey = "Y5w42nyHhdKlYHT00svHuIya";
+  mashiro_option.mathjax = "0";
+  mashiro_option.qq_api_url = "https://api.mashiro.top/qqinfo/"; 
+  mashiro_option.qq_avatar_api_url = "https://api.mashiro.top/qqinfo/";
+
+  // mashiro_option.jsdelivr_css_src = "https://cdn.jsdelivr.net/gh/moezx/cdn@3.4.5/css/lib.min.css";
+  // mashiro_option.float_player_on = true;
+
+  /*End of Initial Variables*/
+  </script>
+  <script type="text/javascript">
+  var bg = "https://cdn.jsdelivr.net/gh/pengjunlee/picture-warehouse/img/(1).jpg.webp,https://cdn.jsdelivr.net/gh/pengjunlee/picture-warehouse/img/(2).jpg.webp,https://cdn.jsdelivr.net/gh/pengjunlee/picture-warehouse/img/(3).jpg.webp,https://cdn.jsdelivr.net/gh/pengjunlee/picture-warehouse/img/(4).jpg.webp,https://cdn.jsdelivr.net/gh/pengjunlee/picture-warehouse/img/(5).jpg.webp,https://cdn.jsdelivr.net/gh/pengjunlee/picture-warehouse/img/(6).jpg.webp,https://cdn.jsdelivr.net/gh/pengjunlee/picture-warehouse/img/(7).jpg.webp,https://cdn.jsdelivr.net/gh/pengjunlee/picture-warehouse/img/(8).jpg.webp".split(",");
+  var bgindex = Math.floor(Math.random()*bg.length);
+  if (!!window.ActiveXObject || "ActiveXObject" in window) { //is IE?
+    alert('朋友，IE浏览器未适配哦~');
+  }
+  </script>
+  <style type="text/css">
+  .hljs-ln{border-collapse:collapse}.hljs-ln td{padding:0}.hljs-ln-n:before{content:attr(data-line-number)}
+  </style>
+  <style type="text/css">.site-top .lower nav{display:block !important;}.author-profile i,.post-like a,.post-share .show-share,.sub-text,.we-info a,span.sitename,.post-more i:hover,#pagination a:hover,.post-content a:hover,.float-content i:hover{color:#FE9600}.feature i,.download,.navigator i:hover,.links ul li:before,.ar-time i,span.ar-circle,.object,.comment .comment-reply-link,.siren-checkbox-radio:checked + .siren-checkbox-radioInput:after{background:#FE9600}::-webkit-scrollbar-thumb{background:#FE9600}.download,.navigator i:hover,.link-title,.links ul li:hover,#pagination a:hover,.comment-respond input[type='submit']:hover{border-color:#FE9600}.entry-content a:hover,.site-info a:hover,.comment h4 a,#comments-navi a.prev,#comments-navi a.next,.comment h4 a:hover,.site-top ul li a:hover,.entry-title a:hover,#archives-temp h3,span.page-numbers.current,.sorry li a:hover,.site-title a:hover,i.iconfont.js-toggle-search.iconsearch:hover,.comment-respond input[type='submit']:hover{color:#FE9600}.comments .comments-main{display:block !important;}.comments .comments-hidden{display:none !important;}background-position:center center;background-attachment:inherit;}
+  </style>
+</head>
+</html>
+<body class="page-template page-template-user page-template-page-analytics page-template-userpage-analytics-php page page-id-1297 chinese-font serif isWebKit">
+  <div class="scrollbar" id="bar">
+  </div>
+  <a href="#" class="cd-top faa-float animated"></a>
+  <section id="main-container">
+    <div class="headertop filter-grid">
+  <div id="banner_wave_1"></div>
+  <div id="banner_wave_2"></div>
+  <figure id="centerbg" class="centerbg">
+    <div class="focusinfo no-select">
+      <div class="header-tou">
+        <a href="http://blog.mtracy.club/">
+          <img src="https://cdn.jsdelivr.net/gh/pengjunlee/picture-warehouse/img/avatar.jpg">
+        </a>
+      </div>
+      <div class="header-info">
+        <p>千帆退却，我向前；天涯尽头，是晴天!</p>
+        <div class="top-social_v2">
+          <li id="bg-pre">
+            <img class="flipx" src="https://cdn.jsdelivr.net/gh/honjun/cdn@1.6/img/other/next-b.svg">
+          </li>
+          
+            
+              
+                <li>
+                  <a href="http://github.com/honjun" target="_blank" class="social-github" title="github">
+                    <img src="https://cdn.jsdelivr.net/gh/pengjunlee/picture-warehouse/img/github.png">
+                  </a>
+                </li>
+              
+            
+              
+                <li>
+                  <a href="http://weibo.com/mashirozx?is_all=1" target="_blank" class="social-github" title="sina">
+                    <img src="https://cdn.jsdelivr.net/gh/pengjunlee/picture-warehouse/img/sina.png">
+                  </a>
+                </li>
+              
+            
+              
+                <li>
+                  <a href="http://weibo.com/mashirozx?is_all=1" target="_blank" class="social-github" title="wangyiyun">
+                    <img src="https://cdn.jsdelivr.net/gh/pengjunlee/picture-warehouse/img/wangyiyun.png">
+                  </a>
+                </li>
+              
+            
+              
+                <li>
+                  <a href="http://weibo.com/mashirozx?is_all=1" target="_blank" class="social-github" title="zhihu">
+                    <img src="https://cdn.jsdelivr.net/gh/pengjunlee/picture-warehouse/img/zhihu.png">
+                  </a>
+                </li>
+              
+            
+              
+                <li>
+                  <a href="http://weibo.com/mashirozx?is_all=1" target="_blank" class="social-github" title="email">
+                    <img src="https://cdn.jsdelivr.net/gh/pengjunlee/picture-warehouse/img/email.svg">
+                  </a>
+                </li>
+              
+            
+              
+                <li class="wechat">
+                  <a href="/#">
+                    <img src="https://cdn.jsdelivr.net/gh/pengjunlee/picture-warehouse/img/wechat.png">
+                  </a>
+                  <div class="wechatInner">
+                    <img src="https://cdn.jsdelivr.net/gh/pengjunlee/picture-warehouse/img/wechat.jpg">
+                  </div>
+                </li>
+              
+            
+              
+                <li class="wechat">
+                  <a href="/#">
+                    <img src="https://cdn.jsdelivr.net/gh/pengjunlee/picture-warehouse/img/wechat.png">
+                  </a>
+                  <div class="wechatInner">
+                    <img src="https://cdn.jsdelivr.net/gh/pengjunlee/picture-warehouse/img/wechat.jpg">
+                  </div>
+                </li>
+              
+            
+          
+          <li id="bg-next">
+            <img src="https://cdn.jsdelivr.net/gh/honjun/cdn@1.6/img/other/next-b.svg">
+          </li>
+        </div>
+      </div>
+    </div>
+  </figure>
+  <div id="video-container" style="">
+    <video style="object-fit: fill" id="bgvideo" class="video" video-name="" src="" width="auto" preload="auto">
+    </video>
+    <div id="video-btn" class="loadvideo videolive">
+    </div>
+    <div id="video-add">
+    </div>
+    <div class="video-stu">
+    </div>
+  </div>
+  <div class="headertop-down faa-float animated" onclick="headertop_down()">
+    <span>
+      <i class="fa fa-chevron-down" aria-hidden="true">
+      </i>
+    </span>
+  </div>
+</div>
+    <div id="page" class="site wrapper">
+      <header class="site-header no-select gizle sabit" role="banner">
+  <div class="site-top">
+    <div class="site-branding">
+      <span class="site-title">
+        <span class="logolink moe-mashiro">
+          <a href="/">
+            <span class="sakurasono">李</span>
+            <span class="shironeko">朋军</span>
+          </a>
+        </span>
+      </span>
+    </div>
+    <div class="searchbox search-form-submit">
+      <i class="iconfont js-toggle-search iconsearch icon-search">
+      </i>
+    </div>
+    <div id="show-nav" class="showNav mobile-fit">
+      <div class="line line1">
+      </div>
+      <div class="line line2">
+      </div>
+      <div class="line line3">
+      </div>
+    </div>
+    <div class="lower-cantiner">
+      <div class="lower">
+        <nav class="mobile-fit-control hide">
+          <ul id="menu-new" class="menu">
+            
+              <li>
+                <a href="/">
+                  <span class="faa-parent animated-hover">
+                    <i class="fa  fa-fort-awesome faa-shake" aria-hidden="true"></i>
+                    首页
+                  </span>
+                </a>
+                
+              </li>
+            
+              <li>
+                <a href="/archives">
+                  <span class="faa-parent animated-hover">
+                    <i class="fa  fa-archive faa-shake" aria-hidden="true"></i>
+                    归档
+                  </span>
+                </a>
+                
+                  <ul class="sub-menu">
+                    
+                      <li>
+                        <a href="/categories/编程/">
+                          <i class="fa fa-code" aria-hidden="true"></i>
+                          编程
+                        </a>
+                      </li>
+                    
+                      <li>
+                        <a href="/categories/技术/">
+                          <i class="fa fa-cogs" aria-hidden="true"></i>
+                          技术
+                        </a>
+                      </li>
+                    
+                      <li>
+                        <a href="/categories/生活/">
+                          <i class="fa fa-file-text-o" aria-hidden="true"></i>
+                          生活
+                        </a>
+                      </li>
+                    
+                      <li>
+                        <a href="/categories/资源/">
+                          <i class="fa fa-cloud-download" aria-hidden="true"></i>
+                          资源
+                        </a>
+                      </li>
+                    
+                      <li>
+                        <a href="/categories/随想/">
+                          <i class="fa fa-commenting-o" aria-hidden="true"></i>
+                          随想
+                        </a>
+                      </li>
+                    
+                      <li>
+                        <a href="/categories/转载/">
+                          <i class="fa fa-book" aria-hidden="true"></i>
+                          转载
+                        </a>
+                      </li>
+                    
+                  </ul>
+                
+              </li>
+            
+              <li>
+                <a href="javascript:;">
+                  <span class="faa-parent animated-hover">
+                    <i class="fa  fa-list-ul faa-vertical" aria-hidden="true"></i>
+                    清单
+                  </span>
+                </a>
+                
+                  <ul class="sub-menu">
+                    
+                      <li>
+                        <a href="/tags/悦读/">
+                          <i class="fa fa-th-list faa-bounce" aria-hidden="true"></i>
+                          书单
+                        </a>
+                      </li>
+                    
+                      <li>
+                        <a href="/bangumi/">
+                          <i class="fa fa-film faa-vertical" aria-hidden="true"></i>
+                          番组
+                        </a>
+                      </li>
+                    
+                      <li>
+                        <a href="/music/">
+                          <i class="fa fa-headphones" aria-hidden="true"></i>
+                          歌单
+                        </a>
+                      </li>
+                    
+                      <li>
+                        <a href="/tags/图集/">
+                          <i class="fa fa-photo" aria-hidden="true"></i>
+                          图集
+                        </a>
+                      </li>
+                    
+                  </ul>
+                
+              </li>
+            
+              <li>
+                <a href="/comment/">
+                  <span class="faa-parent animated-hover">
+                    <i class="fa  fa-pencil-square-o faa-tada" aria-hidden="true"></i>
+                    留言板
+                  </span>
+                </a>
+                
+              </li>
+            
+              <li>
+                <a href="/links/">
+                  <span class="faa-parent animated-hover">
+                    <i class="fa  fa-link faa-shake" aria-hidden="true"></i>
+                    友人帐
+                  </span>
+                </a>
+                
+              </li>
+            
+              <li>
+                <a href="/donate/">
+                  <span class="faa-parent animated-hover">
+                    <i class="fa  fa-heart faa-pulse" aria-hidden="true"></i>
+                    赞赏
+                  </span>
+                </a>
+                
+              </li>
+            
+              <li>
+                <a href="/">
+                  <span class="faa-parent animated-hover">
+                    <i class="fa  fa-leaf faa-wrench" aria-hidden="true"></i>
+                    关于
+                  </span>
+                </a>
+                
+                  <ul class="sub-menu">
+                    
+                      <li>
+                        <a href="/about/">
+                          <i class="fa fa-meetup" aria-hidden="true"></i>
+                          我？
+                        </a>
+                      </li>
+                    
+                      <li>
+                        <a href="/theme-sakura/">
+                          <i class="fa iconfont icon-sakura" aria-hidden="true"></i>
+                          主题
+                        </a>
+                      </li>
+                    
+                      <li>
+                        <a href="/lab/">
+                          <i class="fa fa-cogs" aria-hidden="true"></i>
+                          Lab
+                        </a>
+                      </li>
+                    
+                  </ul>
+                
+              </li>
+            
+              <li>
+                <a href="/client/">
+                  <span class="faa-parent animated-hover">
+                    <i class="fa  fa-android faa-vertical" aria-hidden="true"></i>
+                    客户端
+                  </span>
+                </a>
+                
+              </li>
+            
+              <li>
+                <a href="/atom.xml">
+                  <span class="faa-parent animated-hover">
+                    <i class="fa  fa-rss faa-pulse" aria-hidden="true"></i>
+                    RSS
+                  </span>
+                </a>
+                
+              </li>
+            
+          </ul>
+        </nav>
+      </div>
+    </div>
+  </div>
+</header>
+
+      <link rel="stylesheet" type="text/css" href="/css/sharejs.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/tocbot/4.4.2/tocbot.css">
+<div class="pattern-center-blank"></div>
+
+  <div class="pattern-center single-center">
+    <!-- 有配图默认渲染第一张 -->
+    <div class="pattern-attachment-img lazyload" style="background-image: url(https://cdn.jsdelivr.net/gh/pengjunlee/picture-warehouse/springcloud/sc11.png);" src="https://cdn.jsdelivr.net/gh/pengjunlee/picture-warehouse/img/orange.progress-bar-stripe-loader.svg" data-src="https://cdn.jsdelivr.net/gh/pengjunlee/picture-warehouse/springcloud/sc11.png">
+    </div>
+    <header class="pattern-header single-header">
+      <h1 class="entry-title">
+      SpringCloud系列之--Eureka注册探秘</h1>
+      <p class="entry-census">
+        <span>
+          <a href="pengjunlee">
+            <img src="https://cdn.jsdelivr.net/gh/pengjunlee/picture-warehouse/img/logo.jpg">
+          </a>
+        </span>
+        <span>
+          <a href="pengjunlee">李朋军</a>
+        </span>
+        <span class="bull">
+        ·</span>
+        2020-5-31<span class="bull">
+        ·</span>
+      <span id="busuanzi_value_page_pv"></span>次阅读</p>
+    </header>
+  </div>
+
+<div id="content" class="site-content">
+  <div id="primary" class="content-area">
+    <main id="main" class="site-main" role="main">
+      <article id="post-1" class="post-1 post type-post status-publish format-standard has-post-thumbnail hentry category-uncategorized">
+        <div class="toc"></div>
+        <!--<div class="toc-entry-content"><!-- 套嵌目录使用（主要为了支援评论）-->
+        
+        <div class="entry-content">
+          <blockquote>
+<p>转载自：<a href="http://www.spring4all.com/article/180" title="Eureka中RetryableClientQuarantineRefreshPercentage参数探秘" target="_blank" rel="noopener">Eureka中RetryableClientQuarantineRefreshPercentage参数探秘</a></p>
+</blockquote>
+<h1 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h1><p>我们知道Eureka分为两部分，<code>Eureka Server</code>和<code>Eureka Client</code>。Eureka Server充当注册中心的角色，Eureka Client相对于Eureka Server来说是客户端，需要将自身信息注册到注册中心。本文主要介绍的就是在Eureka Client注册到Eureka Server时RetryableClientQuarantineRefreshPercentage参数的使用技巧。</p>
+<h1 id="Eureka-Client注册过程分析"><a href="#Eureka-Client注册过程分析" class="headerlink" title="Eureka Client注册过程分析"></a>Eureka Client注册过程分析</h1><p>Eureka Client注册到Eureka Server时，首先遇到第一个问题就是Eureka Client端要知道Server的地址，这个参数对应的是<code>eureka.client.service-url.defaultZone</code>，举个例子，在Eureka Client的properties文件中配置如下：</p>
+<pre><code>eureka.client.service-url.defaultZone=http://localhost:8761/eureka,http://localhost:8762/eureka,http://localhost:8763/eureka,http://localhost:8764/eureka
+</code></pre><p>如上所示，Eureka Client配置对应的Eureka Server地址分别是8761、8762、8763、8764。这里存在两个问题：</p>
+<ol>
+<li>Eureka Client会将自身信息分别注册到这四个地址吗？</li>
+<li>Eureka Clinent注册机制是怎样的？</li>
+</ol>
+<p>源码面前一目了然，带着这两个问题我们通过源码来解答这两个问题。Eureka Client在启动的时候注册源码如下：<br>RetryableEurekaHttpClient中的execut方法</p>
+<pre><code> @Override
+  protected &lt;R&gt; EurekaHttpResponse&lt;R&gt; execute(RequestExecutor&lt;R&gt; requestExecutor) {
+      List&lt;EurekaEndpoint&gt; candidateHosts = null;
+      int endpointIdx = 0;
+      for (int retry = 0; retry &lt; numberOfRetries; retry++) {
+          EurekaHttpClient currentHttpClient = delegate.get();
+          EurekaEndpoint currentEndpoint = null;
+          if (currentHttpClient == null) {
+              if (candidateHosts == null) {
+                  candidateHosts = getHostCandidates();
+                  if (candidateHosts.isEmpty()) {
+                      throw new TransportException(&quot;There is no known eureka server; cluster server list is empty&quot;);
+                  }
+              }
+              if (endpointIdx &gt;= candidateHosts.size()) {
+                  throw new TransportException(&quot;Cannot execute request on any known server&quot;);
+              }
+
+              currentEndpoint = candidateHosts.get(endpointIdx++);
+              currentHttpClient = clientFactory.newClient(currentEndpoint);
+          }
+
+          try {
+              EurekaHttpResponse&lt;R&gt; response = requestExecutor.execute(currentHttpClient);
+              if (serverStatusEvaluator.accept(response.getStatusCode(), requestExecutor.getRequestType())) {
+                  delegate.set(currentHttpClient);
+                  if (retry &gt; 0) {
+                      logger.info(&quot;Request execution succeeded on retry #{}&quot;, retry);
+                  }
+                  return response;
+              }
+              logger.warn(&quot;Request execution failure with status code {}; retrying on another server if available&quot;, response.getStatusCode());
+          } catch (Exception e) {
+              logger.warn(&quot;Request execution failed with message: {}&quot;, e.getMessage());  // just log message as the underlying client should log the stacktrace
+          }
+
+          // Connection error or 5xx from the server that must be retried on another server
+          delegate.compareAndSet(currentHttpClient, null);
+          if (currentEndpoint != null) {
+              quarantineSet.add(currentEndpoint);
+          }
+      }
+      throw new TransportException(&quot;Retry limit reached; giving up on completing the request&quot;);
+  }
+</code></pre><p>按照我的理解，代码精简后内容如下：</p>
+<pre><code>int endpointIdx = 0;
+//用来保存所有Eureka Server信息(8761、8762、8763、8764)
+List&lt;EurekaEndpoint&gt; candidateHosts = null;
+//numberOfRetries的值代码写死默认为3次
+for (int retry = 0; retry &lt; numberOfRetries; retry++) {
+    /**
+     *首次进入循环时，获取全量的Eureka Server信息(8761、8762、8763、8764)
+     */
+    if (candidateHosts == null) {
+        candidateHosts = getHostCandidates();
+    }
+    /**
+     *通过endpointIdx自增，依次获取Eureka Server信息，然后发送
+     *注册的Post请求.
+     */
+    currentEndpoint = candidateHosts.get(endpointIdx++);
+    currentHttpClient = clientFactory.newClient(currentEndpoint);
+    try {
+       /**
+         *发送注册的Post请求动作，注意如果成功，则跳出循环，如果失败则
+         *根据endpointIdx依次获取下一个Eureka Server.
+         */
+        response = requestExecutor.execute(currentHttpClient);
+        return respones;
+    } catch (Exception e) {
+        //向注册中心(Eureka Server)发起注册的post出现异常时，打印日志...
+    }
+    //如果此次注册动作失败，将当前的信息保存到quarantineSet中(一个Set集合)
+    if (currentEndpoint != null) {
+        quarantineSet.add(currentEndpoint);
+    }
+}
+//如果都失败,则以异常形式抛出...
+throw new TransportException(&quot;Retry limit reached; giving up on completing the request&quot;);
+</code></pre><p>上面代码中还有一个方法很重要就是 List<eurekaendpoint> candidateHosts = getHostCandidates();接下来看下getHostCandidates()方法源码。</eurekaendpoint></p>
+<pre><code>private List&lt;EurekaEndpoint&gt; getHostCandidates() {
+    List&lt;EurekaEndpoint&gt; candidateHosts = clusterResolver.getClusterEndpoints();
+    quarantineSet.retainAll(candidateHosts);
+
+    // If enough hosts are bad, we have no choice but start over again
+    int threshold = (int) (candidateHosts.size() * transportConfig.getRetryableClientQuarantineRefreshPercentage());
+    if (quarantineSet.isEmpty()) {
+        // no-op
+    } else if (quarantineSet.size() &gt;= threshold) {
+        logger.debug(&quot;Clearing quarantined list of size {}&quot;, quarantineSet.size());
+        quarantineSet.clear();
+    } else {
+        List&lt;EurekaEndpoint&gt; remainingHosts = new ArrayList&lt;&gt;(candidateHosts.size());
+        for (EurekaEndpoint endpoint : candidateHosts) {
+            if (!quarantineSet.contains(endpoint)) {
+                remainingHosts.add(endpoint);
+            }
+        }
+        candidateHosts = remainingHosts;
+    }
+
+    return candidateHosts;
+}
+</code></pre><p>按照我的理解，将代码精简下，只包括关键逻辑，内容如下：</p>
+<pre><code>private List&lt;EurekaEndpoint&gt; getHostCandidates() {
+    /**
+     * 获取所有defaultZone配置的注册中心信息(Eureka Server)，
+     * 在本文例子中代表4个(8761、8762、8763、8764)Eureka Server
+     */
+    List candidateHosts = clusterResolver.getClusterEndpoints();
+    /**
+     * quarantineSet这个Set集合中保存的是不可用的Eureka Server
+     * 此处是拿不可用的Eureka Server与全量的Eureka Server取交集
+     */
+    quarantineSet.retainAll(candidateHosts);
+    /**
+     * 根据RetryableClientQuarantineRefreshPercentage参数计算阈值
+     * 该阈值后续会和quarantineSet中保存的不可用的Eureka Server个数
+     * 作比较，从而判断是否返回全量的Eureka Server还是过滤掉不可用的
+     * Eureka Server。
+     */
+    int threshold = 
+       (int) (
+        candidateHosts.size()
+              *
+        transportConfig.getRetryableClientQuarantineRefreshPercentage()
+        );
+    if (quarantineSet.isEmpty()) {
+        /**
+         * 首次进入的时候，此时quarantineSet为空，直接返回全量的
+         * Eureka Server列表
+         */
+    } else if (quarantineSet.size() &gt;= threshold) {
+        /**
+         * 将不可用的Eureka Server与threshold值相比较，如果不可
+         * 用的Eureka Server个数大于阈值，则将之前保存的Eureka
+         * Server内容直接清空，并返回全量的Eureka Server列表。
+         */
+        quarantineSet.clear();
+    } else {
+        /**
+         * 通过quarantineSet集合保存不可用的Eureka Server来过滤
+         * 全量的EurekaServer，从而获取此次Eureka Client要注册要
+         * 注册的Eureka Server实例地址。
+         */
+        List&lt;EurekaEndpoint&gt; remainingHosts = new ArrayList&lt;&gt;(candidateHosts.size());
+        for (EurekaEndpoint endpoint : candidateHosts) {
+            if (!quarantineSet.contains(endpoint)) {
+                remainingHosts.add(endpoint);
+            }
+        }
+        candidateHosts = remainingHosts;
+    }
+    return candidateHosts;
+}
+</code></pre><p>通过源码分析，我们现在初步知道，当Eureka Client向Eureka Server发起注册请求的时候(根据defaultZone寻找Eureka Server列表)，如果有一次请求注册成功，那么后续就不会在向其他Eureka Server发起注册请求。以本文为例，注册中心有四个(8761、8762、8763、8764)。如果8761对应的Eureka Server服务的状态是UP，那么Eureka Client向该注册中心注册成功后，不会再向(8762、8763、8764)对应的Eureka Server发起注册请求(对应程序是在for循环中直接return respones)。</p>
+<p><strong>说到这里又引出来另外一个问题，如果8761这个Eureka Server是down掉的呢？</strong></p>
+<p>根据源码我们可知Eureka Client首次会向8761这个Server发起注册请求，如果该Server的状态是down，那么它会将该Server保存到quarantineSet这个Set集合中，然后再次访问8762这个Eureka Server，如果8762这个Server的状态依旧是down，它也会把这个Server保存到quarantineSet这个Set集合中，然后继续访问8763这个Server，如果8763这个Server的状态依旧是down，此时除了会将其保存到quarantineSet这个Set集合中之外，还会跳出本次循环。从而结束此次注册过程。</p>
+<p>说道这里有人要问接下来会不会向8764这个Server发起注册，答案是否定的，因为循环的次数默认是3次。所以即使8764这个Server的状态是UP，它也不会接收到来自Eureka Client发起的注册信息。</p>
+<p>Eureka Client向Eureka Server发起注册信息的过程除了在Eureka Client启动的时候触发，还有另外一种方式，就是后台定时任务。</p>
+<p>假设我们上面描述的场景是在Eureka Client启动的时候，因为在启动的时候注册这个过程全部失败了，当后台定时任务执行时，还会进入该注册流程。注意此时quarantineSet的值为3(8761、8762、8763之前注册失败的Eureka Server)。</p>
+<p>所以当程序再次进入getHostCandidates()方法时，if (quarantineSet.isEmpty())这个方法是不满足的，接下来会走else if (quarantineSet.size() &gt;= threshold)这个判断，如果这个判断成立，那么会将quarantineSet集合清空，同时返回全量的Eureka Server列表，如果这个判断不成立，会拿quarantineSet集合中保存的内容去过滤Eureka Server的全量列表。以本文为例：quarantineSet中保存的是(8761、8762、8763)三个Eureka Server，Eureka Server全量列表的内容是(8761、8762、8763、8764)四个Eureka Server，过滤后返回的结果为8764这个Eureka Server。</p>
+<p>在本文的例子中8761、8762、8763这三个Eureka Server的状态是down而8764这个Eureka Server的状态是UP，我们其实是想走到最后的else分支，从而完成过滤操作，并最终得到8764这个Server，遗憾的是它并不会走到这个分支，而是被上面的else if (quarantineSet.size() &gt;= threshold)这个分支所拦截，返回的依旧是全量的Eureka Server列表。这样造成的后果就是Eureka Client依旧会依次向(8761、8762、8763)这三个down的Eureka Server发起注册请求。</p>
+<p>那么问题的关键在哪里呢？问题的关键就是threshold这个值的由来，因为此时quarantineSet.size()的值为3，而3这个值大于threshold，从而导致，会将quarantineSet集合清空，返回全量的Server列表。</p>
+<p>我们知道threshold这个值是根据全量的Eureka Server列表乘以一个可配置的参数计算出来的，在本文的例子当中，我的properties文件中除了defaultZone之外并没有配置这个参数，那么也就是说这个参数是有默认值的，通过源码我们了解到，这个默认值是0.66。具体源码如下：</p>
+<pre><code>final class PropertyBasedTransportConfigConstants {
+    /**
+     *省略部分源码
+     */
+    static class Values {
+        static final int SESSION_RECONNECT_INTERVAL = 20*60;
+        //默认值为0.66
+        static final double QUARANTINE_REFRESH_PERCENTAGE = 0.66;
+        static final int DATA_STALENESS_TRHESHOLD = 5*60;
+        static final int ASYNC_RESOLVER_REFRESH_INTERVAL = 5*60*1000;
+        static final int ASYNC_RESOLVER_WARMUP_TIMEOUT = 5000;
+        static final int ASYNC_EXECUTOR_THREADPOOL_SIZE = 5;
+    }
+}
+/**
+ *@return the percentage of the full endpoints set above which the   
+ *quarantine set is cleared in the range [0, 1.0]
+ */
+double getRetryableClientQuarantineRefreshPercentage();
+</code></pre><p>看到这里就不难理解了，因为这个值是0.66而此时全量的Eureka Server值为4。计算之后的值为2，而由于注册的for循环为3次，所以当第二次发起注册流程的时候quarantineSet的值始终大于threshold。这样就会导致一个问题，就是如果8761、8762、8763一直是down即使8764一直是好的，那么Eureka Client也不会注册成功。而且这个参数值的区间为0到1.</p>
+<p>既然通过源码分析我们找到了问题根源，其实对应的我们也找到了解决这个问题的办法，就是对应把这个参数值调大些。<br>这个值在properties中对应的写法如下：</p>
+<p><code>eureka.client.transport.retryableClientQuarantineRefreshPercentage = xxx</code>  </p>
+<p>接下来我们修改下properties文件，修改后的内容如下：</p>
+<pre><code>eureka.client.service-url.defaultZone=http://localhost:8761/eureka,http://localhost:8762/eureka,http://localhost:8763/eureka,http://localhost:8764/eureka
+eureka.client.transport.retryableClientQuarantineRefreshPercentage=1
+</code></pre><p>接下来按照这个配置再次回顾下上面的流程：</p>
+<ul>
+<li>Eureka Client启动时进行注册(8761、8762、8763的状态是down)，所以此时quarantineSet的值为3.</li>
+<li>接下来在定时任务中又触发注册事件，此时因为参数的值从0.66调整为1。所以计算出的threshold的值为4。而此时quarantineSet的值为3。所以不会进入到else if (quarantineSet.size() &gt;= threshold)分支，而是会进入最后的esle分支。</li>
+<li>在else分支中会完成过滤功能，最终返回的list中的结果只有一个就是8764这个Eureka Server。</li>
+<li>Eureka Client向8764这个Eureka Server发起注册请求，得到成功相应，并返回。</li>
+</ul>
+<h1 id="遗留问题"><a href="#遗留问题" class="headerlink" title="遗留问题"></a>遗留问题</h1><p>说道这里我们感觉好像是解决了这个问题，那么问一个问题，这个参数值可以设置的无限大吗？</p>
+<p>比如我将这个参数值设置为10，虽然javaDoc中说明这个参数值的范围在0-1之间，但是并没有说明如果将这个参数调整大于1会出现什么情况。接下来按照上面的流程我们分析下：</p>
+<p>之前我们分析的流程中的前提是8761、8762、8763这三台Server的状态是down而8764这个server的状态是up，现在我们修改下这个前提。</p>
+<p>假设一开始8761、8762、8763、8764这四台Eureka Server的状态都是down。Eureka Client启动时进行注册(8761、8762、8763的状态是down)，所以此时quarantineSet的值为3.</p>
+<ul>
+<li>接下来在定时任务中又触发注册事件，此时因为参数的值从0.66调整为10。所以计算出的threshold的值为40。而此时quarantineSet的值为3。所以不会进入到else if (quarantineSet.size() &gt;= threshold)分支，而是会进入最后的esle分支。</li>
+<li>在else分支中会完成过滤功能，最终返回的list中的结果只有一个就是8764这个Eureka Server。</li>
+<li>Eureka Client向8764这个Eureka Server发起注册请求，因为此时8764的状态也是down导致注册失败，此时quarantineSet中的内容是(8761、8762、8763、8764)</li>
+<li>当定时任务再次触发时if (quarantineSet.isEmpty())这个分支不会进入，因为此时quarantineSet的值为4</li>
+<li>else if (quarantineSet.size() &gt;= threshold)这分支也不会进入因为threshold的值为40</li>
+<li>最终会进入else分支，这个分支原本的含义是想通过quarantineSet来充当过滤器，从全量的Eureka Server中过滤掉之前状态为down的Eureka Server，但是由于quarantineSet的值现在已经是全量，导致过滤后的结果返回的是一个空的list。即使此时Eureka Server列表(8761、8762、8763、8764)任何一个Server的状态变为UP，该Eureka Client也不可能完成注册事件。</li>
+</ul>
+<h1 id="解决办法"><a href="#解决办法" class="headerlink" title="解决办法"></a>解决办法</h1><p>上面出现的那个问题，根本原因个人认为是由于eureka.client.transport.retryableClientQuarantineRefreshPercentage 参数过大而源码中没有校验，从而导致没有进入else if (quarantineSet.size() &gt;= threshold)的逻辑分支，因为此时如果quarantineSet中的值已经达到了所有Eureka Server列表，那么此时我们希望的是将这个Set集合清空，从而再次返回全量的Eureka Server列表，也就是说再重新来一次注册流程。</p>
+<p>所以基于上面的分析，个人认为在源码的getHostCandidates增加下校验，具体代码如下：</p>
+<pre><code>private List&lt;EurekaEndpoint&gt; getHostCandidates() {
+    List&lt;EurekaEndpoint&gt; candidateHosts = clusterResolver.getClusterEndpoints();
+    quarantineSet.retainAll(candidateHosts);
+
+    // If enough hosts are bad, we have no choice but start over again
+    int threshold = (int) (candidateHosts.size() * transportConfig.getRetryableClientQuarantineRefreshPercentage());
+
+    /**
+     * 增加判断如果threshold的值过大，即超过Eureka Server
+     * 列表的数量，那么将其再次赋值，赋值的内容为Eureka Server
+     * 列表的数量。
+     */
+    if (threshold &gt; candidateHosts.size()) {
+          threshold = candidateHosts.size();
+    }
+
+    if (quarantineSet.isEmpty()) {
+        // no-op
+    } else if (quarantineSet.size() &gt;= threshold) {
+        logger.debug(&quot;Clearing quarantined list of size {}&quot;, quarantineSet.size());
+        quarantineSet.clear();
+    } else {
+        List&lt;EurekaEndpoint&gt; remainingHosts = new ArrayList&lt;&gt;(candidateHosts.size());
+        for (EurekaEndpoint endpoint : candidateHosts) {
+            if (!quarantineSet.contains(endpoint)) {
+                remainingHosts.add(endpoint);
+            }
+        }
+        candidateHosts = remainingHosts;
+    }
+
+    return candidateHosts;
+}
+</code></pre>
+        </div>
+        <!-- .entry-content -->
+        <div class="single-reward">
+          <div class="reward-open">赏
+            <div class="reward-main">
+              <ul class="reward-row">
+                <li class="alipay-code"><img src="https://cdn.jsdelivr.net/gh/pengjunlee/picture-warehouse/img/AliPayQR.jpg"></li>
+                <li class="wechat-code"><img src="https://cdn.jsdelivr.net/gh/pengjunlee/picture-warehouse/img/WeChanQR.jpg"></li>
+              </ul>
+            </div>
+          </div>
+        </div>
+        <div style="text-align:center; width: 100%" class="social-share share-mobile" data-disabled="diandian, tencent"></div>
+        <footer class="post-footer">
+          <div class="post-lincenses"><a href="https://creativecommons.org/licenses/by-nc-sa/4.0/deed.zh" target="_blank" rel="nofollow"><i class="fa fa-creative-commons" aria-hidden="true"></i> 知识共享署名-非商业性使用-相同方式共享 4.0 国际许可协议</a></div>
+          <div class="post-tags">
+          </div>
+          <div class="post-share">
+            <div class="social-share sharehidden share-component"></div>
+            <i class="iconfont show-share icon-forward"></i>
+          </div>
+        </footer><!-- .entry-footer -->
+      </article>
+      <!-- #post-## -->
+      <div class="toc" style="background: none;"></div>
+      <section class="post-squares nextprev">
+        
+          
+            <div class="post-nepre half previous">
+          
+            <a href="/2020/06/06/Java核心基础之--Base64编码与解码/" rel="prev">
+              <div class="background">
+                <img class="lazyload" src="https://cdn.jsdelivr.net/gh/pengjunlee/picture-warehouse/img/orange.progress-bar-stripe-loader.svg" data-src="https://cdn.jsdelivr.net/gh/pengjunlee/picture-warehouse/java-core/j1.png" style="width: 100%; height: 100%; object-fit: cover; pointer-events: none;" onerror="imgError(this,3)" src="https://cdn.jsdelivr.net/gh/pengjunlee/picture-warehouse/java-core/j1.png">
+              </div>
+              <span class="label">
+              Previous Post</span>
+              <div class="info">
+                <h3>
+                Java核心基础之--Base64编码与解码</h3>
+                <hr>
+              </div>
+            </a>
+          </div>
+        
+        
+          
+            <div class="post-nepre half next">
+          
+            <a href="/2020/05/31/SpringCloud之--Config-Server配置中心/" rel="next">
+              <div class="background">
+                <img class="lazyload" src="https://cdn.jsdelivr.net/gh/pengjunlee/picture-warehouse/img/orange.progress-bar-stripe-loader.svg" data-src="https://cdn.jsdelivr.net/gh/pengjunlee/picture-warehouse/springcloud/sc10.png" style="width: 100%; height: 100%; object-fit: cover; pointer-events: none;" onerror="imgError(this,3)" src="https://cdn.jsdelivr.net/gh/pengjunlee/picture-warehouse/springcloud/sc10.png">
+              </div>
+              <span class="label">
+              Next Post</span>
+              <div class="info">
+                <h3>
+                SpringCloud系列之--Config-Server配置中心</h3>
+                <hr>
+              </div>
+            </a>
+          </div>
+        
+      </section>
+      
+<div id="vcomments"></div>
+<script>
+  window.onload = function(){
+      var valine = new Valine();
+      valine.init({
+        el: '#vcomments',
+        appId: "k0QcRvFFw7AovKS8un6pys2S-gzGzoHsz",
+        appKey: "Y5w42nyHhdKlYHT00svHuIya",
+        path: window.location.pathname,
+        placeholder: "你是我一生只会遇见一次的惊喜 ..."
+      })
+  }
+</script>
+
+      <section class="author-profile">
+        <div class="info" itemprop="author" itemscope="" itemtype="https://schema.org/Person">
+          <a href="pengjunlee" class="profile gravatar"><img src="https://cdn.jsdelivr.net/gh/pengjunlee/picture-warehouse/img/logo.jpg" itemprop="image" alt="李朋军" height="70" width="70"></a>
+          <div class="meta">
+            <span class="title">Author</span>
+            <h3 itemprop="name">
+            <a href="pengjunlee" itemprop="url" rel="author">李朋军</a>
+            </h3>
+          </div>
+        </div>
+        <hr>
+        <p><i class="iconfont icon-write"></i>能克服困难的人，可使困难化为良机。</p>
+      </section>
+    </main><!-- #main -->
+  </div><!-- #primary -->
+</div>
+
+
+
+    </div>    
+    <div class="ins-search">
+    <div class="ins-search-mask"></div>
+    <div class="ins-search-container">
+        <div class="ins-input-wrapper">
+            <input type="text" class="ins-search-input" placeholder="请输入关键词..."/>
+            <span class="ins-close ins-selectable"><i class="fa fa-times-circle"></i></span>
+        </div>
+        <div class="ins-section-wrapper">
+            <div class="ins-section-container"></div>
+        </div>
+    </div>
+</div>
+<script>
+(function (window) {
+    var INSIGHT_CONFIG = {
+        TRANSLATION: {
+            POSTS: '文章',
+            // PAGES: '页面',
+            CATEGORIES: '分类',
+            TAGS: '标签',
+        },
+        ROOT_URL: '/',
+        CONTENT_URL: '/content.json',
+    };
+    window.INSIGHT_CONFIG = INSIGHT_CONFIG;
+})(window);
+</script>
+    <!-- <footer id="footer">
+  
+  <div class="outer">
+    <div id="footer-info" class="inner">
+      &copy; 2023 pengjunlee<br>
+      powered_by <a href="http://hexo.io/" target="_blank">Hexo</a>
+    </div>
+  </div>
+</footer> -->
+<footer id="colophon" class="site-footer" role="contentinfo">
+  <div class="site-info">
+    <div class="footertext">
+      <div class="img-preload">
+        <img src="https://cdn.jsdelivr.net/gh/honjun/cdn@1.6/img/other/wordpress-rotating-ball-o.svg">
+        <img src="https://cdn.jsdelivr.net/gh/honjun/cdn@1.6/img/other/disqus-preloader.svg">
+      </div>
+      <p style="color: #666666;">&copy 2018</p>
+    </div>
+    <div class="footer-device">
+    <p style="font-family: 'Ubuntu', sans-serif;">
+        <span style="color: #b9b9b9;">Theme <a href="https://github.com/honjun/hexo-theme-sakura" target="_blank" style="color: #b9b9b9;;text-decoration: underline dotted rgba(0, 0, 0, .1);">Sakura</a> <i class="iconfont icon-sakura rotating" style="color: #ffc0cb;display:inline-block"></i> by <a href="https://2heng.xin/" target="_blank" style="color: #b9b9b9;;text-decoration: underline dotted rgba(0, 0, 0, .1);">Mashiro</a>&<a href="https://www.hojun.cn/" target="_blank" style="color: #b9b9b9;;text-decoration: underline dotted rgba(0, 0, 0, .1);">Hojun</a>, Powered by Hexo, Hosted by Coding Pages</a>
+        </span>
+      </p>
+    </div>
+  </div><!-- .site-info -->
+</footer>
+
+
+
+<!-- <script src="/js/tocbot.js"></script> -->
+<script type="text/javascript" src="/js/lib.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/clipboard@2/dist/clipboard.min.js"></script>
+<script type="text/javascript" src="/js/InsightSearch.js"></script>
+<script type="text/javascript" src="/js/jquery.fancybox.min.js"></script>
+<script type="text/javascript" src="/js/zoom.min.js"></script>
+<script type="text/javascript" src="/js/sakura-app.js"></script>
+<script src="//cdn1.lncld.net/static/js/3.0.4/av-min.js"></script>
+<script src='//unpkg.com/valine@1.3.4/dist/Valine.min.js'></script>
+<script src="/js/botui.js"></script>
+<!-- 不蒜子 网页计数器 -->
+<script src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+<!-- <script src="https://cdnjs.cloudflare.com/ajax/libs/tocbot/4.4.2/tocbot.min.js"></script> -->
+<script type="text/javascript">
+/* <![CDATA[ */
+if (/Android|webOS|iPhone|iPod|BlackBerry/i.test(navigator.userAgent)) {
+  var Poi = {"pjax":"1","movies":{"url": "https://cdn.jsdelivr.net/gh/pengjunlee/picture-warehouse/img","name":"Unbroken.mp4","live":"close"},"windowheight":"fixed","codelamp":"close","ajaxurl":"","order":"asc","formpostion":"bottom"};
+} else {
+  var Poi = {"pjax":"1","movies":{"url": "https://cdn.jsdelivr.net/gh/pengjunlee/picture-warehouse/img","name":"Unbroken.mp4","live":"open"},"windowheight":"auto","codelamp":"close","ajaxurl":"","order":"asc","formpostion":"bottom"};
+}
+/* ]]> */
+
+</script>
+<script>
+$(document).ready(function() {
+  if ($(".toc").length > 0 && document.body.clientWidth > 1200) {
+    if ($(".pattern-center").length > 0) { //有图的情况
+      tocbot.init({
+          // Where to render the table of contents.
+          tocSelector: '.toc', // 放置目录的容器
+          // Where to grab the headings to build the table of contents.
+          contentSelector: '.entry-content', // 正文内容所在
+          // Which headings to grab inside of the contentSelector element.
+          scrollSmooth: true,
+          headingSelector: 'h1, h2, h3, h4, h5', // 需要索引的标题级别
+          headingsOffset: -400,
+          scrollSmoothOffset: -85
+      });
+    } else {
+      tocbot.init({
+          // Where to render the table of contents.
+          tocSelector: '.toc', // 放置目录的容器
+          // Where to grab the headings to build the table of contents.
+          contentSelector: '.entry-content', // 正文内容所在
+          // Which headings to grab inside of the contentSelector element.
+          scrollSmooth: true,
+          headingSelector: 'h1, h2, h3, h4, h5', // 需要索引的标题级别
+          headingsOffset: -85,
+          scrollSmoothOffset: -85
+      });
+    }
+    var offsetTop = $('.toc').offset().top - 95;
+    window.onscroll = function() {
+      var scrollTop = window.pageYOffset || document.documentElement.scrollTop || document.body.scrollTop;
+      if (scrollTop >= offsetTop) {
+        $('.toc').addClass('toc-fixed');
+      } else {
+        $('.toc').removeClass('toc-fixed');
+      }
+    }
+  }
+});
+</script>
+
+    <div class="openNav no-select" style="height: 50px;">
+      <div class="iconflat no-select" style="width: 50px; height: 50px;">
+        <div class="icon"></div>
+      </div>
+      <div class="site-branding search-form-submit">
+        <i class="iconfont js-toggle-search iconsearch icon-search"></i>
+      </div>
+    </div>
+  </section>
+  <div id="mo-nav" class="">
+  <div class="m-avatar">
+    <img src="https://cdn.jsdelivr.net/gh/pengjunlee/picture-warehouse/img/avatar.jpg">
+  </div>
+  <p style="text-align: center; color: #333; font-weight: 900; font-family: 'Ubuntu', sans-serif; letter-spacing: 1.5px">李朋军</p>
+  <p style="text-align: center; word-spacing: 20px;">
+    
+      
+        <a href="http://github.com/honjun" class="fa fa-github" target="_blank" style="color: #333; margin-left:20px"></a>
+      
+        <a href="http://weibo.com/mashirozx?is_all=1" class="fa fa-weibo" target="_blank" style="color: #dd4b39; margin-left:20px"></a>
+      
+        <a href="https://wpa.qq.com/msgrd?v=3&uin=954655431&site=qq&menu=yes" class="fa fa-qq" target="_blank" style="color: #25c6fe; margin-left:20px"></a>
+      
+    
+  </p>
+  <ul id="menu-new-1" class="menu">
+    
+      <li>
+        <a href="/">
+          <span class="faa-parent animated-hover">
+            <i class="fa  fa-fort-awesome faa-shake" aria-hidden="true"></i>
+            首页
+          </span>
+        </a>
+        
+      </li>
+    
+      <li>
+        <a href="/archives">
+          <span class="faa-parent animated-hover">
+            <i class="fa  fa-archive faa-shake" aria-hidden="true"></i>
+            归档
+          </span>
+        </a>
+        
+          <ul class="sub-menu">
+            
+              <li>
+                <a href="/categories/编程/">
+                  <i class="fa fa-code" aria-hidden="true"></i>
+                  编程
+                </a>
+              </li>
+            
+              <li>
+                <a href="/categories/技术/">
+                  <i class="fa fa-cogs" aria-hidden="true"></i>
+                  技术
+                </a>
+              </li>
+            
+              <li>
+                <a href="/categories/生活/">
+                  <i class="fa fa-file-text-o" aria-hidden="true"></i>
+                  生活
+                </a>
+              </li>
+            
+              <li>
+                <a href="/categories/资源/">
+                  <i class="fa fa-cloud-download" aria-hidden="true"></i>
+                  资源
+                </a>
+              </li>
+            
+              <li>
+                <a href="/categories/随想/">
+                  <i class="fa fa-commenting-o" aria-hidden="true"></i>
+                  随想
+                </a>
+              </li>
+            
+              <li>
+                <a href="/categories/转载/">
+                  <i class="fa fa-book" aria-hidden="true"></i>
+                  转载
+                </a>
+              </li>
+            
+          </ul>
+        
+      </li>
+    
+      <li>
+        <a href="javascript:;">
+          <span class="faa-parent animated-hover">
+            <i class="fa  fa-list-ul faa-vertical" aria-hidden="true"></i>
+            清单
+          </span>
+        </a>
+        
+          <ul class="sub-menu">
+            
+              <li>
+                <a href="/tags/悦读/">
+                  <i class="fa fa-th-list faa-bounce" aria-hidden="true"></i>
+                  书单
+                </a>
+              </li>
+            
+              <li>
+                <a href="/bangumi/">
+                  <i class="fa fa-film faa-vertical" aria-hidden="true"></i>
+                  番组
+                </a>
+              </li>
+            
+              <li>
+                <a href="/music/">
+                  <i class="fa fa-headphones" aria-hidden="true"></i>
+                  歌单
+                </a>
+              </li>
+            
+              <li>
+                <a href="/tags/图集/">
+                  <i class="fa fa-photo" aria-hidden="true"></i>
+                  图集
+                </a>
+              </li>
+            
+          </ul>
+        
+      </li>
+    
+      <li>
+        <a href="/comment/">
+          <span class="faa-parent animated-hover">
+            <i class="fa  fa-pencil-square-o faa-tada" aria-hidden="true"></i>
+            留言板
+          </span>
+        </a>
+        
+      </li>
+    
+      <li>
+        <a href="/links/">
+          <span class="faa-parent animated-hover">
+            <i class="fa  fa-link faa-shake" aria-hidden="true"></i>
+            友人帐
+          </span>
+        </a>
+        
+      </li>
+    
+      <li>
+        <a href="/donate/">
+          <span class="faa-parent animated-hover">
+            <i class="fa  fa-heart faa-pulse" aria-hidden="true"></i>
+            赞赏
+          </span>
+        </a>
+        
+      </li>
+    
+      <li>
+        <a href="/">
+          <span class="faa-parent animated-hover">
+            <i class="fa  fa-leaf faa-wrench" aria-hidden="true"></i>
+            关于
+          </span>
+        </a>
+        
+          <ul class="sub-menu">
+            
+              <li>
+                <a href="/about/">
+                  <i class="fa fa-meetup" aria-hidden="true"></i>
+                  我？
+                </a>
+              </li>
+            
+              <li>
+                <a href="/theme-sakura/">
+                  <i class="fa iconfont icon-sakura" aria-hidden="true"></i>
+                  主题
+                </a>
+              </li>
+            
+              <li>
+                <a href="/lab/">
+                  <i class="fa fa-cogs" aria-hidden="true"></i>
+                  Lab
+                </a>
+              </li>
+            
+          </ul>
+        
+      </li>
+    
+      <li>
+        <a href="/client/">
+          <span class="faa-parent animated-hover">
+            <i class="fa  fa-android faa-vertical" aria-hidden="true"></i>
+            客户端
+          </span>
+        </a>
+        
+      </li>
+    
+      <li>
+        <a href="/atom.xml">
+          <span class="faa-parent animated-hover">
+            <i class="fa  fa-rss faa-pulse" aria-hidden="true"></i>
+            RSS
+          </span>
+        </a>
+        
+      </li>
+    
+  </ul>
+  <p style="text-align: center; font-size: 13px; color: #b9b9b9;">&copy 2019 hexo-sakura</p>
+</div>
+<button onclick="topFunction()" class="mobile-cd-top" id="moblieGoTop" title="Go to top" style="display: none;"><i class="fa fa-chevron-up" aria-hidden="true"></i></button>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/aplayer/dist/APlayer.min.css">
+<script src="https://cdn.jsdelivr.net/npm/aplayer/dist/APlayer.min.js"></script>
+<!-- require MetingJS -->
+<script src="https://cdn.jsdelivr.net/npm/meting@2/dist/Meting.min.js"></script>
+<style>
+  .aplayer .aplayer-lrc {
+    height: 35px;
+  }
+  .aplayer .aplayer-lrc p{
+    font-size: 16px;
+    font-weight: 700;
+    line-height: 18px !important;
+  }
+  .aplayer .aplayer-lrc p.aplayer-lrc-current{
+    color: #FF1493;
+  }
+  .aplayer.aplayer-narrow .aplayer-body{
+    left: -66px !important;
+  }
+  .aplayer.aplayer-fixed .aplayer-lrc {
+    display: none;
+  }
+  .aplayer .aplayer-lrc.aplayer-lrc-hide {
+      display:none !important;
+  }
+  .aplayer.aplayer-fixed .lrc-show {
+    display: block;
+    background: rgba(255, 255, 255, 0.8);
+  }
+</style>
+<meting-js
+
+    id="2660651585"
+
+    server="netease"
+
+    type="playlist"
+
+    fixed="true"
+
+    autoplay="false"
+
+    loop="all"
+
+    order="random"
+
+    preload="auto"
+
+    volume="0.7"
+
+    mutex="true"
+
+</meting-js>
+<script>
+  $(function(){
+    $('body').on('click', '.aplayer', function(){
+      if($('.aplayer-button').hasClass('aplayer-play')) {
+        $('.aplayer-lrc').removeClass('lrc-show');
+      } else {
+        $('.aplayer-lrc').addClass('lrc-show');
+      }
+    })
+  });
+</script>
+</body>
+</html>
